@@ -80,7 +80,7 @@ describe("HANDOFF_TEMPLATE", () => {
     //#given - the template string
 
     //#when / #then
-    expect(HANDOFF_TEMPLATE).toContain("todoread")
+    expect(HANDOFF_TEMPLATE).toContain("bd list")
     expect(HANDOFF_TEMPLATE).toContain("git diff")
     expect(HANDOFF_TEMPLATE).toContain("git status")
   })

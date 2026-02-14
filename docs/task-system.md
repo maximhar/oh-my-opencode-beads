@@ -1,8 +1,94 @@
 # Task System
 
-Oh My OpenCode's Task system provides structured task management with dependency tracking and parallel execution optimization.
+Oh My OpenCode's primary task management uses **beads** (`bd` CLI) for issue tracking with dependency management, cross-session persistence, and execution workflow.
 
-## Note on Claude Code Alignment
+## Beads: The Primary Workflow
+
+Beads provides a git-synced issue graph with full dependency tracking. Issues persist across sessions and sync via git.
+
+### Core Commands
+
+| Command | Purpose |
+|---------|---------|
+| `bd create --title="..." --type=task` | Create an issue |
+| `bd ready` | List issues with no unresolved blockers |
+| `bd show <id>` | View issue details and dependencies |
+| `bd update <id> --status in_progress` | Claim work |
+| `bd close <id>` | Mark issue complete |
+| `bd dep add <issue> <depends-on>` | Add dependency |
+| `bd blocked` | Show all blocked issues |
+| `bd stats` | Project statistics |
+| `bd sync` | Sync with git |
+
+### Issue Schema
+
+Issues support these fields:
+
+- **id**: Auto-generated (e.g., `beads-001`)
+- **title**: Short imperative description
+- **type**: `task`, `bug`, `feature`
+- **priority**: 0–4 (0=critical, 4=backlog)
+- **status**: `open`, `in_progress`, `closed`
+- **dependencies**: Explicit via `bd dep add`
+- **notes/design/description**: Rich metadata
+
+### Dependencies and Execution Order
+
+```
+[Build Frontend]    ──┐
+                      ├──→ [Integration Tests] ──→ [Deploy]
+[Build Backend]     ──┘
+```
+
+- Issues with no blockers appear in `bd ready`
+- Closing an issue automatically unblocks its dependents
+
+### Example Workflow
+
+```bash
+bd create --title="Build frontend" --type=task         # beads-001
+bd create --title="Build backend" --type=task          # beads-002
+bd create --title="Run integration tests" --type=task  # beads-003
+bd dep add beads-003 beads-001   # tests depend on frontend
+bd dep add beads-003 beads-002   # tests depend on backend
+```
+
+```bash
+bd ready
+# beads-001 [open] Build frontend        (no blockers)
+# beads-002 [open] Build backend          (no blockers)
+
+bd update beads-001 --status in_progress
+# ... implement frontend ...
+bd close beads-001
+
+bd update beads-002 --status in_progress
+# ... implement backend ...
+bd close beads-002
+
+bd ready
+# beads-003 [open] Run integration tests  (unblocked!)
+```
+
+### Storage
+
+Issues are stored in the `.beads/` directory and sync with git via `bd sync`.
+
+### When to Use Beads
+
+Use beads when:
+- Work has multiple steps with dependencies
+- Progress should persist across sessions
+- You want visibility into what's blocked and what's ready
+- Multiple agents or sessions will collaborate on work
+
+---
+
+## Legacy: TaskCreate / TaskUpdate System
+
+> **Compatibility Fallback**: The following describes the legacy task system based on Claude Code's internal `TaskCreate`/`TaskUpdate` tools. This system is retained for backward compatibility but is **not the recommended approach**. Use beads (`bd` CLI) for new work.
+
+### Note on Claude Code Alignment
 
 This implementation follows Claude Code's internal Task tool signatures (`TaskCreate`, `TaskUpdate`, `TaskList`, `TaskGet`) and field naming conventions (`subject`, `blockedBy`, `blocks`, etc.).
 
@@ -10,7 +96,7 @@ This implementation follows Claude Code's internal Task tool signatures (`TaskCr
 
 This is **Oh My OpenCode's own implementation** based on observed Claude Code behavior and internal specifications.
 
-## Tools
+### Legacy Tools
 
 | Tool | Purpose |
 |------|---------|
@@ -19,7 +105,7 @@ This is **Oh My OpenCode's own implementation** based on observed Claude Code be
 | `TaskList` | List active tasks with unresolved blockers |
 | `TaskUpdate` | Update status, dependencies, or metadata |
 
-## Task Schema
+### Legacy Task Schema
 
 ```ts
 interface Task {
@@ -36,59 +122,16 @@ interface Task {
 }
 ```
 
-## Dependencies and Parallel Execution
+### Legacy Storage
 
-```
-[Build Frontend]    ──┐
-                      ├──→ [Integration Tests] ──→ [Deploy]
-[Build Backend]     ──┘
-```
+Tasks are stored as JSON files in `.sisyphus/tasks/`.
 
-- Tasks with empty `blockedBy` run in parallel
-- Dependent tasks wait until blockers complete
+### Comparison: Beads vs Legacy Task System vs TodoWrite
 
-## Example Workflow
-
-```ts
-TaskCreate({ subject: "Build frontend" })                    // T-001
-TaskCreate({ subject: "Build backend" })                     // T-002
-TaskCreate({ subject: "Run integration tests",
-             blockedBy: ["T-001", "T-002"] })                 // T-003
-```
-
-```ts
-TaskList()
-// T-001 [pending] Build frontend        blockedBy: []
-// T-002 [pending] Build backend         blockedBy: []
-// T-003 [pending] Integration tests     blockedBy: [T-001, T-002]
-```
-
-```ts
-TaskUpdate({ id: "T-001", status: "completed" })
-TaskUpdate({ id: "T-002", status: "completed" })
-// T-003 now unblocked
-```
-
-## Storage
-
-Tasks are stored as JSON files:
-
-```
-.sisyphus/tasks/
-```
-
-## Difference from TodoWrite
-
-| Feature | TodoWrite | Task System |
-|---------|-----------|-------------|
-| Storage | Session memory | File system |
-| Persistence | Lost on close | Survives restart |
-| Dependencies | None | Full support (`blockedBy`) |
-| Parallel execution | Manual | Automatic optimization |
-
-## When to Use
-
-Use Tasks when:
-- Work has multiple steps with dependencies
-- Multiple subagents will collaborate
-- Progress should persist across sessions
+| Feature | Beads (`bd` CLI) | Legacy Task System | TodoWrite |
+|---------|-------------------|-------------|-----------|
+| Storage | `.beads/` (git-synced) | `.sisyphus/tasks/` (file system) | Session memory |
+| Persistence | Git-synced, survives anything | Survives restart | Lost on close |
+| Dependencies | Full (`bd dep add`) | Full (`blockedBy`) | None |
+| Cross-session | Yes (via git) | Yes (via files) | No |
+| Recommended | **Yes** | Legacy fallback | No |

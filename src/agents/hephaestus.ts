@@ -21,80 +21,44 @@ import {
 
 const MODE: AgentMode = "primary";
 
-function buildTodoDisciplineSection(useTaskSystem: boolean): string {
-  if (useTaskSystem) {
-    return `## Task Discipline (NON-NEGOTIABLE)
+function buildTodoDisciplineSection(_useTaskSystem: boolean): string {
+  return `## Issue Tracking with Beads (NON-NEGOTIABLE)
 
-**Track ALL multi-step work with tasks. This is your execution backbone.**
+**Track ALL multi-step work with beads issues. This is your execution backbone.**
 
-### When to Create Tasks (MANDATORY)
+### When to Create Issues (MANDATORY)
 
 | Trigger | Action |
 |---------|--------|
-| 2+ step task | \`TaskCreate\` FIRST, atomic breakdown |
-| Uncertain scope | \`TaskCreate\` to clarify thinking |
-| Complex single task | Break down into trackable steps |
+| 2+ step task | \`bd create --title="..." --type=task --priority=2\` FIRST, atomic breakdown |
+| Uncertain scope | \`bd create\` to clarify thinking |
+| Complex single task | Break down into trackable issues |
 
 ### Workflow (STRICT)
 
-1. **On task start**: \`TaskCreate\` with atomic steps—no announcements, just create
-2. **Before each step**: \`TaskUpdate(status="in_progress")\` (ONE at a time)
-3. **After each step**: \`TaskUpdate(status="completed")\` IMMEDIATELY (NEVER batch)
-4. **Scope changes**: Update tasks BEFORE proceeding
+1. **On task start**: \`bd create\` with atomic steps via bash—no announcements, just create
+2. **Before each step**: \`bd update <id> --status in_progress\` (ONE at a time)
+3. **After each step**: \`bd close <id>\` IMMEDIATELY (NEVER batch)
+4. **Scope changes**: Create/update issues BEFORE proceeding
+5. **Dependencies**: \`bd dep add <issue> <depends-on>\` when issues block each other
 
 ### Why This Matters
 
-- **Execution anchor**: Tasks prevent drift from original request
-- **Recovery**: If interrupted, tasks enable seamless continuation
-- **Accountability**: Each task = explicit commitment to deliver
+- **Execution anchor**: Issues prevent drift from original request
+- **Recovery**: If interrupted, \`bd ready\` shows what to work on next
+- **Accountability**: Each issue = explicit commitment to deliver
+- **Persistence**: Issues survive session boundaries
 
 ### Anti-Patterns (BLOCKING)
 
 | Violation | Why It Fails |
 |-----------|--------------|
-| Skipping tasks on multi-step work | Steps get forgotten, user has no visibility |
-| Batch-completing multiple tasks | Defeats real-time tracking purpose |
+| Skipping issues on multi-step work | Steps get forgotten, no visibility |
+| Not closing completed issues | Issue appears incomplete; blocks dependents |
 | Proceeding without \`in_progress\` | No indication of current work |
-| Finishing without completing tasks | Task appears incomplete |
+| Using session todos instead of bd | Data lost on session end |
 
-**NO TASKS ON MULTI-STEP WORK = INCOMPLETE WORK.**`;
-  }
-
-  return `## Todo Discipline (NON-NEGOTIABLE)
-
-**Track ALL multi-step work with todos. This is your execution backbone.**
-
-### When to Create Todos (MANDATORY)
-
-| Trigger | Action |
-|---------|--------|
-| 2+ step task | \`todowrite\` FIRST, atomic breakdown |
-| Uncertain scope | \`todowrite\` to clarify thinking |
-| Complex single task | Break down into trackable steps |
-
-### Workflow (STRICT)
-
-1. **On task start**: \`todowrite\` with atomic steps—no announcements, just create
-2. **Before each step**: Mark \`in_progress\` (ONE at a time)
-3. **After each step**: Mark \`completed\` IMMEDIATELY (NEVER batch)
-4. **Scope changes**: Update todos BEFORE proceeding
-
-### Why This Matters
-
-- **Execution anchor**: Todos prevent drift from original request
-- **Recovery**: If interrupted, todos enable seamless continuation
-- **Accountability**: Each todo = explicit commitment to deliver
-
-### Anti-Patterns (BLOCKING)
-
-| Violation | Why It Fails |
-|-----------|--------------|
-| Skipping todos on multi-step work | Steps get forgotten, user has no visibility |
-| Batch-completing multiple todos | Defeats real-time tracking purpose |
-| Proceeding without \`in_progress\` | No indication of current work |
-| Finishing without completing todos | Task appears incomplete |
-
-**NO TODOS ON MULTI-STEP WORK = INCOMPLETE WORK.**`;
+**NO BEADS ISSUES ON MULTI-STEP WORK = INCOMPLETE WORK.**`;
 }
 
 /**

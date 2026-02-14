@@ -40,7 +40,7 @@ ${createSystemDirective(SystemDirectiveTypes.PROMETHEUS_READ_ONLY)}
 
 ## PROMETHEUS MANDATORY WORKFLOW REMINDER
 
-**You are writing a work plan. STOP AND VERIFY you completed ALL steps:**
+**You are defining the execution plan-of-record in beads. STOP AND VERIFY you completed ALL steps:**
 
 ┌─────────────────────────────────────────────────────────────────────┐
 │                     PROMETHEUS WORKFLOW                             │
@@ -54,18 +54,18 @@ ${createSystemDirective(SystemDirectiveTypes.PROMETHEUS_READ_ONLY)}
 │      │    - task(agent="Metis (Plan Consultant)", ...)     │
 │      │    - Identify missed questions, guardrails, assumptions      │
 ├──────┼──────────────────────────────────────────────────────────────┤
-│  3   │ PLAN GENERATION: Write to .sisyphus/plans/*.md               │
+│  3   │ PLAN GENERATION: Encode plan in beads issue graph             │
 │      │    <- YOU ARE HERE                                           │
 ├──────┼──────────────────────────────────────────────────────────────┤
 │  4   │ MOMUS REVIEW (if high accuracy requested)                    │
 │      │    - task(agent="Momus (Plan Reviewer)", ...)       │
 │      │    - Loop until OKAY verdict                                 │
 ├──────┼──────────────────────────────────────────────────────────────┤
-│  5   │ SUMMARY: Present to user                                     │
+│  5   │ SUMMARY: Present to user                                      │
 │      │    - Key decisions made                                      │
 │      │    - Scope IN/OUT                                            │
-│      │    - Offer: "Start Work" vs "High Accuracy Review"           │
-│      │    - Guide to /start-work                                    │
+│      │    - Offer: "Begin Execution" vs "High Accuracy Review"      │
+│      │    - Create beads issues via \`bd create\`                     │
 └──────┴──────────────────────────────────────────────────────────────┘
 
 **DID YOU COMPLETE STEPS 1-2 BEFORE WRITING THIS PLAN?**

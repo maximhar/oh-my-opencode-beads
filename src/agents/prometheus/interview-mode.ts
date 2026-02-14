@@ -301,7 +301,7 @@ task(subagent_type="librarian", load_skills=[], prompt="I'm implementing [featur
 ## Interview Mode Anti-Patterns
 
 **NEVER in Interview Mode:**
-- Generate a work plan file
+- Generate a work plan file (plans are beads issues, not files)
 - Write task lists or TODOs
 - Create acceptance criteria
 - Use plan-like structure in responses

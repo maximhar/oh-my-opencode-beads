@@ -1,72 +1,65 @@
-export const START_WORK_TEMPLATE = `You are starting a Sisyphus work session.
+export const START_WORK_TEMPLATE = `You are starting a beads-driven work session.
 
 ## WHAT TO DO
 
-1. **Find available plans**: Search for Prometheus-generated plan files at \`.sisyphus/plans/\`
+1. **Check for in-progress issues**: Run \`bd list --status=in_progress --json\` to find work already claimed
 
-2. **Check for active boulder state**: Read \`.sisyphus/boulder.json\` if it exists
+2. **Find available work**: Run \`bd ready --json\` to list issues with no blockers
 
 3. **Decision logic**:
-   - If \`.sisyphus/boulder.json\` exists AND plan is NOT complete (has unchecked boxes):
-     - **APPEND** current session to session_ids
-     - Continue work on existing plan
-   - If no active plan OR plan is complete:
-     - List available plan files
-     - If ONE plan: auto-select it
-     - If MULTIPLE plans: show list with timestamps, ask user to select
+   - If there are in-progress issues:
+     - Resume work on the first in-progress issue
+   - If no in-progress issues but ready issues exist:
+     - If ONE ready issue: auto-select it
+     - If MULTIPLE ready issues: show list with priorities, ask user to select
+   - If no ready issues:
+     - Check \`bd blocked --json\` for blocked work
+     - Report status and ask user what to create or unblock
 
-4. **Create/Update boulder.json**:
-   \`\`\`json
-   {
-     "active_plan": "/absolute/path/to/plan.md",
-     "started_at": "ISO_TIMESTAMP",
-     "session_ids": ["session_id_1", "session_id_2"],
-     "plan_name": "plan-name"
-   }
-   \`\`\`
+4. **Claim work**: Run \`bd update <id> --status=in_progress\` to claim the selected issue
 
-5. **Read the plan file** and start executing tasks according to atlas workflow
+5. **Read issue details** with \`bd show <id> --json\` and start executing the work
 
 ## OUTPUT FORMAT
 
-When listing plans for selection:
+When listing issues for selection:
 \`\`\`
-Available Work Plans
+Available Work (beads ready)
 
 Current Time: {ISO timestamp}
 Session ID: {current session id}
 
-1. [plan-name-1.md] - Modified: {date} - Progress: 3/10 tasks
-2. [plan-name-2.md] - Modified: {date} - Progress: 0/5 tasks
+1. [{issue-id}] P{priority} - {title}
+2. [{issue-id}] P{priority} - {title}
 
-Which plan would you like to work on? (Enter number or plan name)
+Which issue would you like to work on? (Enter number or issue ID)
 \`\`\`
 
-When resuming existing work:
+When resuming in-progress work:
 \`\`\`
 Resuming Work Session
 
-Active Plan: {plan-name}
-Progress: {completed}/{total} tasks
-Sessions: {count} (appending current session)
+Active Issue: [{issue-id}] {title}
+Priority: P{priority}
+Status: in_progress
 
-Reading plan and continuing from last incomplete task...
+Reading issue details and continuing work...
 \`\`\`
 
-When auto-selecting single plan:
+When auto-selecting single issue:
 \`\`\`
 Starting Work Session
 
-Plan: {plan-name}
+Issue: [{issue-id}] {title}
 Session ID: {session_id}
 Started: {timestamp}
 
-Reading plan and beginning execution...
+Claiming issue and beginning execution...
 \`\`\`
 
 ## CRITICAL
 
 - The session_id is injected by the hook - use it directly
-- Always update boulder.json BEFORE starting work
-- Read the FULL plan file before delegating any tasks
-- Follow atlas delegation protocols (7-section format)`
+- Always claim the issue with \`bd update\` BEFORE starting work
+- Read the FULL issue details with \`bd show\` before beginning
+- Close issues with \`bd close <id>\` when work is complete`

@@ -115,7 +115,7 @@ describe("atlas hook", () => {
     })
 
      test("should not transform when caller is not Atlas", async () => {
-       // given - boulder state exists but caller agent in message storage is not Atlas
+       // given - work state exists but caller agent in message storage is not Atlas
        const sessionID = "session-non-orchestrator-test"
        setupMessageStorage(sessionID, "other-agent")
       
@@ -361,7 +361,7 @@ describe("atlas hook", () => {
       cleanupMessageStorage(sessionID)
     })
 
-     test("should include session_id and checkbox instructions in reminder", async () => {
+     test("should include session_id and issue update instructions in reminder", async () => {
        // given - boulder state, Atlas caller
        const sessionID = "session-resume-test"
        setupMessageStorage(sessionID, "atlas")
@@ -392,7 +392,7 @@ describe("atlas hook", () => {
 
       // then - should include session_id instructions and verification
       expect(output.output).toContain("task(session_id=")
-      expect(output.output).toContain("[x]")
+      expect(output.output).toContain("bd close <id>")
       expect(output.output).toContain("MANDATORY:")
       
       cleanupMessageStorage(sessionID)

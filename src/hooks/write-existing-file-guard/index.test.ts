@@ -202,8 +202,8 @@ describe("createWriteExistingFileGuardHook", () => {
        await expect(result).rejects.toThrow("File already exists. Use edit tool instead.")
      })
 
-    describe(".sisyphus/*.md exception", () => {
-      test("allows write to existing .sisyphus/plans/plan.md", async () => {
+    describe(".sisyphus/*.md behavior", () => {
+      test("blocks write to existing .sisyphus/plans/plan.md", async () => {
         //#given
         const sisyphusDir = path.join(tempDir, ".sisyphus", "plans")
         fs.mkdirSync(sisyphusDir, { recursive: true })
@@ -216,10 +216,10 @@ describe("createWriteExistingFileGuardHook", () => {
         const result = hook["tool.execute.before"]?.(input as any, output as any)
 
         //#then
-        await expect(result).resolves.toBeUndefined()
+        await expect(result).rejects.toThrow("File already exists. Use edit tool instead.")
       })
 
-      test("allows write to existing .sisyphus/notes.md", async () => {
+      test("blocks write to existing .sisyphus/notes.md", async () => {
         //#given
         const sisyphusDir = path.join(tempDir, ".sisyphus")
         fs.mkdirSync(sisyphusDir, { recursive: true })
@@ -232,10 +232,10 @@ describe("createWriteExistingFileGuardHook", () => {
         const result = hook["tool.execute.before"]?.(input as any, output as any)
 
         //#then
-        await expect(result).resolves.toBeUndefined()
+        await expect(result).rejects.toThrow("File already exists. Use edit tool instead.")
       })
 
-      test("allows write to existing .sisyphus/*.md using relative path", async () => {
+      test("blocks write to existing .sisyphus/*.md using relative path", async () => {
         //#given
         const sisyphusDir = path.join(tempDir, ".sisyphus")
         fs.mkdirSync(sisyphusDir, { recursive: true })
@@ -248,7 +248,7 @@ describe("createWriteExistingFileGuardHook", () => {
         const result = hook["tool.execute.before"]?.(input as any, output as any)
 
         //#then
-        await expect(result).resolves.toBeUndefined()
+        await expect(result).rejects.toThrow("File already exists. Use edit tool instead.")
       })
 
       test("blocks write to existing .sisyphus/file.txt (non-markdown)", async () => {

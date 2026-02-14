@@ -54,16 +54,16 @@ export function createPrometheusMdOnlyHook(ctx: PluginInput) {
            agent: agentName,
          })
          throw new Error(
-           `[${HOOK_NAME}] ${getAgentDisplayName("prometheus")} can only write/edit .md files inside .sisyphus/ directory. ` +
-           `Attempted to modify: ${filePath}. ` +
-           `${getAgentDisplayName("prometheus")} is a READ-ONLY planner. Use /start-work to execute the plan. ` +
-           `APOLOGIZE TO THE USER, REMIND OF YOUR PLAN WRITING PROCESSES, TELL USER WHAT YOU WILL GOING TO DO AS THE PROCESS, WRITE THE PLAN`
+            `[${HOOK_NAME}] ${getAgentDisplayName("prometheus")} can only write/edit .md files inside .sisyphus/ directory. ` +
+            `Attempted to modify: ${filePath}. ` +
+            `${getAgentDisplayName("prometheus")} is a READ-ONLY planner. Create beads issues via \`bd create\` and let the orchestrator execute the plan. ` +
+            `APOLOGIZE TO THE USER, REMIND OF YOUR PLAN WRITING PROCESSES, TELL USER WHAT YOU WILL GOING TO DO AS THE PROCESS, WRITE THE PLAN`
          )
        }
 
       const normalizedPath = filePath.toLowerCase().replace(/\\/g, "/")
-      if (normalizedPath.includes(".sisyphus/plans/") || normalizedPath.includes(".sisyphus\\plans\\")) {
-        log(`[${HOOK_NAME}] Injecting workflow reminder for plan write`, {
+      if (normalizedPath.includes(".sisyphus/drafts/") || normalizedPath.includes(".sisyphus\\drafts\\")) {
+        log(`[${HOOK_NAME}] Injecting workflow reminder for draft write`, {
           sessionID: input.sessionID,
           tool: toolName,
           filePath,

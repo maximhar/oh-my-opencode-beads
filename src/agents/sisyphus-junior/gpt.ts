@@ -19,14 +19,11 @@
 import { resolvePromptAppend } from "../builtin-agents/resolve-file-uri"
 
 export function buildGptSisyphusJuniorPrompt(
-  useTaskSystem: boolean,
+  _useTaskSystem: boolean,
   promptAppend?: string
 ): string {
-  const taskDiscipline = buildGptTaskDisciplineSection(useTaskSystem)
-  const blockedActionsSection = buildGptBlockedActionsSection(useTaskSystem)
-  const verificationText = useTaskSystem
-    ? "All tasks marked completed"
-    : "All todos marked completed"
+  const taskDiscipline = buildGptTaskDisciplineSection()
+  const blockedActionsSection = buildGptBlockedActionsSection()
 
   const prompt = `<identity>
 You are Sisyphus-Junior - Focused task executor from OhMyOpenCode.
@@ -74,7 +71,7 @@ Task NOT complete without evidence:
 |-------|------|----------|
 | Diagnostics | lsp_diagnostics | ZERO errors on changed files |
 | Build | Bash | Exit code 0 (if applicable) |
-| Tracking | ${useTaskSystem ? "TaskUpdate" : "todowrite"} | ${verificationText} |
+| Tracking | bd list --status=open | All beads issues for this work closed |
 
 **No evidence = not complete.**
 </verification_spec>
@@ -90,27 +87,7 @@ Task NOT complete without evidence:
   return prompt + "\n\n" + resolvePromptAppend(promptAppend)
 }
 
-function buildGptBlockedActionsSection(useTaskSystem: boolean): string {
-  if (useTaskSystem) {
-    return `<blocked_actions>
-BLOCKED (will fail if attempted):
-| Tool | Status | Description |
-|------|--------|-------------|
-| task | BLOCKED | Agent delegation tool — you cannot spawn other agents |
-
-ALLOWED:
-| Tool | Usage |
-|------|-------|
-| call_omo_agent | Spawn explore/librarian for research ONLY |
-| task_create | Create tasks to track your work |
-| task_update | Update task status (in_progress, completed) |
-| task_list | List active tasks |
-| task_get | Get task details by ID |
-
-You work ALONE for implementation. No delegation.
-</blocked_actions>`
-  }
-
+function buildGptBlockedActionsSection(): string {
   return `<blocked_actions>
 BLOCKED (will fail if attempted):
 | Tool | Status | Description |
@@ -126,30 +103,17 @@ You work ALONE for implementation. No delegation.
 </blocked_actions>`
 }
 
-function buildGptTaskDisciplineSection(useTaskSystem: boolean): string {
-  if (useTaskSystem) {
-    return `<task_discipline_spec>
-TASK TRACKING (NON-NEGOTIABLE):
+function buildGptTaskDisciplineSection(): string {
+  return `<beads_discipline_spec>
+ISSUE TRACKING WITH BEADS (NON-NEGOTIABLE):
 | Trigger | Action |
 |---------|--------|
-| 2+ steps | TaskCreate FIRST, atomic breakdown |
-| Starting step | TaskUpdate(status="in_progress") - ONE at a time |
-| Completing step | TaskUpdate(status="completed") IMMEDIATELY |
-| Batching | NEVER batch completions |
+| 2+ steps | \`bd create --title="..." --type=task --priority=2\` FIRST, atomic breakdown |
+| Starting step | \`bd update <id> --status in_progress\` - ONE at a time |
+| Completing step | \`bd close <id>\` IMMEDIATELY |
+| Batching | NEVER batch closures |
+| Dependencies | \`bd dep add <issue> <depends-on>\` |
 
-No tasks on multi-step work = INCOMPLETE WORK.
-</task_discipline_spec>`
-  }
-
-  return `<todo_discipline_spec>
-TODO TRACKING (NON-NEGOTIABLE):
-| Trigger | Action |
-|---------|--------|
-| 2+ steps | todowrite FIRST, atomic breakdown |
-| Starting step | Mark in_progress - ONE at a time |
-| Completing step | Mark completed IMMEDIATELY |
-| Batching | NEVER batch completions |
-
-No todos on multi-step work = INCOMPLETE WORK.
-</todo_discipline_spec>`
+No beads issues on multi-step work = INCOMPLETE WORK.
+</beads_discipline_spec>`
 }

@@ -216,12 +216,12 @@ describe("todo-continuation-enforcer", () => {
     // then - countdown toast shown
     await wait(50)
     expect(toastCalls.length).toBeGreaterThanOrEqual(1)
-    expect(toastCalls[0].title).toBe("Todo Continuation")
+    expect(toastCalls[0].title).toBe("Work Continuation")
 
     // then - after countdown, continuation injected
     await wait(2500)
     expect(promptCalls.length).toBe(1)
-    expect(promptCalls[0].text).toContain("TODO CONTINUATION")
+    expect(promptCalls[0].text).toContain("WORK CONTINUATION")
   }, { timeout: 15000 })
 
   test("should not inject when all todos are complete", async () => {
@@ -1101,7 +1101,7 @@ describe("todo-continuation-enforcer", () => {
 
     // then - prompt call made, model is undefined when no context (expected behavior)
     expect(promptCalls.length).toBe(1)
-    expect(promptCalls[0].text).toContain("TODO CONTINUATION")
+    expect(promptCalls[0].text).toContain("WORK CONTINUATION")
     expect("model" in promptCalls[0]).toBe(true)
   }, { timeout: 15000 })
 

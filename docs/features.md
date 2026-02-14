@@ -10,7 +10,7 @@ Oh-My-OpenCode provides 11 specialized AI agents. Each has distinct expertise, o
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| **Sisyphus** | `anthropic/claude-opus-4-6` | **The default orchestrator.** Plans, delegates, and executes complex tasks using specialized subagents with aggressive parallel execution. Todo-driven workflow with extended thinking (32k budget). Fallback: kimi-k2.5 → glm-4.7 → gpt-5.3-codex → gemini-3-pro. |
+| **Sisyphus** | `anthropic/claude-opus-4-6` | **The default orchestrator.** Plans, delegates, and executes complex tasks using specialized subagents with aggressive parallel execution. Beads-driven issue tracking (`bd` CLI) with extended thinking (32k budget). Fallback: kimi-k2.5 → glm-4.7 → gpt-5.3-codex → gemini-3-pro. |
 | **Hephaestus** | `openai/gpt-5.3-codex` | **The Legitimate Craftsman.** Autonomous deep worker inspired by AmpCode's deep mode. Goal-oriented execution with thorough research before action. Explores codebase patterns, completes tasks end-to-end without premature stopping. Named after the Greek god of forge and craftsmanship. Requires gpt-5.3-codex (no fallback - only activates when this model is available). |
 | **oracle** | `openai/gpt-5.2` | Architecture decisions, code review, debugging. Read-only consultation - stellar logical reasoning and deep analysis. Inspired by AmpCode. |
 | **librarian** | `zai-coding-plan/glm-4.7` | Multi-repo analysis, documentation lookup, OSS implementation examples. Deep codebase understanding with evidence-based answers. Fallback: glm-4.7-free → claude-sonnet-4-5. |
@@ -218,7 +218,7 @@ Commands are slash-triggered workflows that execute predefined templates.
 | `/ulw-loop` | Start ultrawork loop - continues with ultrawork mode |
 | `/cancel-ralph` | Cancel active Ralph Loop |
 | `/refactor` | Intelligent refactoring with LSP, AST-grep, architecture analysis, and TDD verification |
-| `/start-work` | Start Sisyphus work session from Prometheus plan |
+| `/start-work` | *(Legacy)* Start Sisyphus work session from Prometheus plan. Prefer beads-driven workflow (`bd ready` → `bd update --status in_progress` → `bd close`). |
 
 ### Command: /init-deep
 
@@ -283,7 +283,9 @@ Everything runs at maximum intensity - parallel agents, background tasks, aggres
 
 ### Command: /start-work
 
-**Purpose**: Start execution from a Prometheus-generated plan
+> **Legacy Compatibility**: This command uses `.sisyphus/plans/` and `boulder.json` for plan-file orchestration. For new projects, prefer the **beads-driven workflow** where work is tracked via `bd` CLI (`bd ready` → `bd update --status in_progress` → `bd close`).
+
+**Purpose**: Start execution from a Prometheus-generated plan (legacy fallback)
 
 **Usage**:
 ```
@@ -369,7 +371,9 @@ Hooks intercept and modify behavior at key points in the agent lifecycle.
 | **session-notification** | Stop | OS notifications when agents go idle. Works on macOS, Linux, Windows. |
 | **agent-usage-reminder** | PostToolUse | Reminds you to leverage specialized agents for better results. |
 
-#### Task Management
+#### Task Management (Legacy)
+
+> **Note**: These hooks support the legacy plan-file task system. For new projects, use beads (`bd` CLI) for issue tracking and work management.
 
 | Hook | Event | Description |
 |------|-------|-------------|

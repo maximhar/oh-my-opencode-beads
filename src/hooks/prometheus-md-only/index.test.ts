@@ -212,7 +212,7 @@ describe("prometheus-md-only", () => {
       ).resolves.toBeUndefined()
     })
 
-    test("should inject workflow reminder when Prometheus writes to .sisyphus/plans/", async () => {
+    test("should inject workflow reminder when Prometheus writes to .sisyphus/drafts/", async () => {
       // given
       const hook = createPrometheusMdOnlyHook(createMockPluginInput())
       const input = {
@@ -221,7 +221,7 @@ describe("prometheus-md-only", () => {
         callID: "call-1",
       }
       const output: { args: Record<string, unknown>; message?: string } = {
-        args: { filePath: "/tmp/test/.sisyphus/plans/work-plan.md" },
+        args: { filePath: "/tmp/test/.sisyphus/drafts/notes.md" },
       }
 
       // when
@@ -234,7 +234,7 @@ describe("prometheus-md-only", () => {
       expect(output.message).toContain("MOMUS REVIEW")
     })
 
-    test("should NOT inject workflow reminder for .sisyphus/drafts/", async () => {
+    test("should NOT inject workflow reminder for .sisyphus/plans/", async () => {
       // given
       const hook = createPrometheusMdOnlyHook(createMockPluginInput())
       const input = {
@@ -243,7 +243,7 @@ describe("prometheus-md-only", () => {
         callID: "call-1",
       }
       const output: { args: Record<string, unknown>; message?: string } = {
-        args: { filePath: "/tmp/test/.sisyphus/drafts/notes.md" },
+        args: { filePath: "/tmp/test/.sisyphus/plans/work-plan.md" },
       }
 
       // when
@@ -468,7 +468,7 @@ describe("prometheus-md-only", () => {
     })
   })
 
-  describe("boulder state priority over message files (fixes #927)", () => {
+  describe("work state priority over message files (fixes #927)", () => {
     const BOULDER_DIR = join(tmpdir(), `boulder-test-${randomUUID()}`)
     const BOULDER_FILE = join(BOULDER_DIR, ".sisyphus", "boulder.json")
 
@@ -480,14 +480,14 @@ describe("prometheus-md-only", () => {
       rmSync(BOULDER_DIR, { recursive: true, force: true })
     })
 
-    //#given session was started with prometheus (first message), but /start-work set boulder agent to atlas
+    //#given session was started with prometheus (first message), but /start-work set work state agent to atlas
     //#when user types "continue" after interruption (memory cleared, falls back to message files)
-    //#then should use boulder state agent (atlas), not message file agent (prometheus)
-    test("should prioritize boulder agent over message file agent", async () => {
+    //#then should use work state agent (atlas), not message file agent (prometheus)
+    test("should prioritize work state agent over message file agent", async () => {
       // given - prometheus in message files (from /plan)
       setupMessageStorage(TEST_SESSION_ID, "prometheus")
       
-      // given - atlas in boulder state (from /start-work)
+      // given - atlas in work state (from /start-work)
       writeFileSync(BOULDER_FILE, JSON.stringify({
         active_plan: "/test/plan.md",
         started_at: new Date().toISOString(),
@@ -510,17 +510,17 @@ describe("prometheus-md-only", () => {
         args: { filePath: "/path/to/code.ts" },
       }
 
-      // when / then - should NOT block because boulder says atlas, not prometheus
+      // when / then - should NOT block because work state says atlas, not prometheus
       await expect(
         hook["tool.execute.before"](input, output)
       ).resolves.toBeUndefined()
     })
 
-    test("should use prometheus from boulder state when set", async () => {
+    test("should use prometheus from work state when set", async () => {
       // given - atlas in message files (from some other agent)
       setupMessageStorage(TEST_SESSION_ID, "atlas")
       
-      // given - prometheus in boulder state (edge case, but should honor it)
+      // given - prometheus in work state (edge case, but should honor it)
       writeFileSync(BOULDER_FILE, JSON.stringify({
         active_plan: "/test/plan.md",
         started_at: new Date().toISOString(),
@@ -543,17 +543,17 @@ describe("prometheus-md-only", () => {
         args: { filePath: "/path/to/code.ts" },
       }
 
-      // when / then - should block because boulder says prometheus
+      // when / then - should block because work state says prometheus
       await expect(
         hook["tool.execute.before"](input, output)
       ).rejects.toThrow("can only write/edit .md files")
     })
 
-    test("should fall back to message files when session not in boulder", async () => {
+    test("should fall back to message files when session not in work state", async () => {
       // given - prometheus in message files
       setupMessageStorage(TEST_SESSION_ID, "prometheus")
       
-      // given - boulder state exists but for different session
+      // given - work state exists but for different session
       writeFileSync(BOULDER_FILE, JSON.stringify({
         active_plan: "/test/plan.md",
         started_at: new Date().toISOString(),

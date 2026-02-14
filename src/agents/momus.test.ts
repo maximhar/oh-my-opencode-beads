@@ -17,15 +17,26 @@ describe("MOMUS_SYSTEM_PROMPT policy requirements", () => {
     expect(prompt).toMatch(/<system-reminder>|system-reminder/)
   })
 
-  test("should extract paths containing .sisyphus/plans/ and ending in .md", () => {
+  test("should accept .sisyphus/plans/*.md paths as valid input", () => {
     // given
     const prompt = MOMUS_SYSTEM_PROMPT
 
     // when / #then
     expect(prompt).toContain(".sisyphus/plans/")
     expect(prompt).toContain(".md")
-    // New extraction policy should be mentioned
-    expect(prompt.toLowerCase()).toMatch(/extract|search|find path/)
+    // Extraction policy should be mentioned
+    expect(prompt.toLowerCase()).toMatch(/extract|search|find/)
+  })
+
+  test("should accept beads issue context as valid input", () => {
+    // given
+    const prompt = MOMUS_SYSTEM_PROMPT
+
+    // when / #then
+    // Should mention beads issue content as valid
+    expect(prompt.toLowerCase()).toMatch(/beads|bd show|issue/)
+    // Should describe inline plan content as acceptable
+    expect(prompt.toLowerCase()).toMatch(/inline/)
   })
 
   test("should NOT teach that 'Please review' is INVALID (conversational wrapper allowed)", () => {
@@ -45,14 +56,14 @@ describe("MOMUS_SYSTEM_PROMPT policy requirements", () => {
     expect(prompt).not.toMatch(rejectionTeaching)
   })
 
-  test("should handle ambiguity (2+ paths) and 'no path found' rejection", () => {
+  test("should handle ambiguity (2+ paths) and 'no plan content found' rejection", () => {
     // given
     const prompt = MOMUS_SYSTEM_PROMPT
 
     // when / #then
     // Should mention what happens when multiple paths are found
     expect(prompt.toLowerCase()).toMatch(/multiple|ambiguous|2\+|two/)
-    // Should mention rejection if no path found
-    expect(prompt.toLowerCase()).toMatch(/no.*path.*found|reject.*no.*path/)
+    // Should mention rejection if no plan content found
+    expect(prompt.toLowerCase()).toMatch(/no plan content|no plan.*found|reject/)
   })
 })

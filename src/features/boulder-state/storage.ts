@@ -1,13 +1,21 @@
 /**
  * Boulder State Storage
  *
- * Handles reading/writing boulder.json for active plan tracking.
+ * Legacy boulder-state read/write functions are retained for backward
+ * compatibility with atlas hooks and other consumers.
+ *
+ * New beads-oriented helpers (ActiveWorkState) are added for the
+ * migrated start-work flow.
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs"
 import { dirname, join, basename } from "node:path"
-import type { BoulderState, PlanProgress } from "./types"
+import type { BoulderState, PlanProgress, ActiveWorkState } from "./types"
 import { BOULDER_DIR, BOULDER_FILE, PROMETHEUS_PLANS_DIR } from "./constants"
+
+// ---------------------------------------------------------------------------
+// Legacy boulder.json helpers (kept for backward compat)
+// ---------------------------------------------------------------------------
 
 export function getBoulderFilePath(directory: string): string {
   return join(directory, BOULDER_DIR, BOULDER_FILE)
@@ -83,8 +91,7 @@ export function clearBoulderState(directory: string): boolean {
 }
 
 /**
- * Find Prometheus plan files for this project.
- * Prometheus stores plans at: {project}/.sisyphus/plans/{name}.md
+ * @deprecated Use `bd ready` / `bd list` instead.
  */
 export function findPrometheusPlans(directory: string): string[] {
   const plansDir = join(directory, PROMETHEUS_PLANS_DIR)
@@ -99,7 +106,6 @@ export function findPrometheusPlans(directory: string): string[] {
       .filter((f) => f.endsWith(".md"))
       .map((f) => join(plansDir, f))
       .sort((a, b) => {
-        // Sort by modification time, newest first
         const aStat = require("node:fs").statSync(a)
         const bStat = require("node:fs").statSync(b)
         return bStat.mtimeMs - aStat.mtimeMs
@@ -110,7 +116,7 @@ export function findPrometheusPlans(directory: string): string[] {
 }
 
 /**
- * Parse a plan file and count checkbox progress.
+ * @deprecated Use beads issue status instead.
  */
 export function getPlanProgress(planPath: string): PlanProgress {
   if (!existsSync(planPath)) {
@@ -119,8 +125,7 @@ export function getPlanProgress(planPath: string): PlanProgress {
 
   try {
     const content = readFileSync(planPath, "utf-8")
-    
-    // Match markdown checkboxes: - [ ] or - [x] or - [X]
+
     const uncheckedMatches = content.match(/^[-*]\s*\[\s*\]/gm) || []
     const checkedMatches = content.match(/^[-*]\s*\[[xX]\]/gm) || []
 
@@ -138,14 +143,14 @@ export function getPlanProgress(planPath: string): PlanProgress {
 }
 
 /**
- * Extract plan name from file path.
+ * @deprecated Use beads issue title instead.
  */
 export function getPlanName(planPath: string): string {
   return basename(planPath, ".md")
 }
 
 /**
- * Create a new boulder state for a plan.
+ * @deprecated Use createActiveWorkState instead.
  */
 export function createBoulderState(
   planPath: string,
@@ -159,4 +164,110 @@ export function createBoulderState(
     plan_name: getPlanName(planPath),
     ...(agent !== undefined ? { agent } : {}),
   }
+}
+
+// ---------------------------------------------------------------------------
+// Beads-oriented active work state helpers
+// ---------------------------------------------------------------------------
+
+const ACTIVE_WORK_FILE = "active-work.json"
+
+function getActiveWorkFilePath(directory: string): string {
+  return join(directory, BOULDER_DIR, ACTIVE_WORK_FILE)
+}
+
+/**
+ * Create a fresh ActiveWorkState.
+ */
+export function createActiveWorkState(
+  sessionId: string,
+  issueId?: string | null,
+  issueTitle?: string | null,
+  agent?: string
+): ActiveWorkState {
+  return {
+    active_issue_id: issueId ?? null,
+    active_issue_title: issueTitle ?? null,
+    started_at: new Date().toISOString(),
+    session_ids: [sessionId],
+    ...(agent !== undefined ? { agent } : {}),
+  }
+}
+
+/**
+ * Read the active-work.json state for beads-oriented workflows.
+ */
+export function readActiveWorkState(directory: string): ActiveWorkState | null {
+  const filePath = getActiveWorkFilePath(directory)
+  if (!existsSync(filePath)) return null
+
+  try {
+    const content = readFileSync(filePath, "utf-8")
+    const parsed = JSON.parse(content)
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null
+    }
+    if (!Array.isArray(parsed.session_ids)) {
+      parsed.session_ids = []
+    }
+    return parsed as ActiveWorkState
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Write the active-work.json state.
+ */
+export function writeActiveWorkState(directory: string, state: ActiveWorkState): boolean {
+  const filePath = getActiveWorkFilePath(directory)
+
+  try {
+    const dir = dirname(filePath)
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true })
+    }
+    writeFileSync(filePath, JSON.stringify(state, null, 2), "utf-8")
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Clear the active-work.json state.
+ */
+export function clearActiveWorkState(directory: string): boolean {
+  const filePath = getActiveWorkFilePath(directory)
+  try {
+    if (existsSync(filePath)) {
+      const { unlinkSync } = require("node:fs")
+      unlinkSync(filePath)
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Append a session ID to the active work state.
+ */
+export function appendActiveWorkSessionId(
+  directory: string,
+  sessionId: string
+): ActiveWorkState | null {
+  const state = readActiveWorkState(directory)
+  if (!state) return null
+
+  if (!state.session_ids?.includes(sessionId)) {
+    if (!Array.isArray(state.session_ids)) {
+      state.session_ids = []
+    }
+    state.session_ids.push(sessionId)
+    if (writeActiveWorkState(directory, state)) {
+      return state
+    }
+  }
+  return state
 }

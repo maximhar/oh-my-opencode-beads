@@ -1,6 +1,6 @@
 # Understanding the Orchestration System
 
-Oh My OpenCode's orchestration system transforms a simple AI agent into a coordinated development team. This document explains how the Prometheus → Atlas → Junior workflow creates high-quality, reliable code output.
+Oh My OpenCode's orchestration system transforms a simple AI agent into a coordinated development team. This document explains how the Prometheus → Beads → Agent workflow creates high-quality, reliable code output.
 
 ---
 
@@ -28,12 +28,14 @@ flowchart TB
         Momus["👁️ Momus<br/>(Reviewer)<br/>GPT-5.2"]
     end
     
-    subgraph Execution["Execution Layer (Orchestrator)"]
-        Orchestrator["⚡ Atlas<br/>(Conductor)<br/>Claude Opus 4.5"]
+    subgraph Tracking["Tracking Layer (Beads Issue Graph)"]
+        BeadsCreate["bd create<br/>(Issue Decomposition)"]
+        BeadsReady["bd ready<br/>(Unblocked Work)"]
+        BeadsClose["bd close<br/>(Completion)"]
     end
     
     subgraph Workers["Worker Layer (Specialized Agents)"]
-        Junior["🪨 Sisyphus-Junior<br/>(Task Executor)<br/>Claude Sonnet 4.5"]
+        Sisyphus["🪨 Sisyphus<br/>(Orchestrator)<br/>Claude Opus 4.5"]
         Oracle["🧠 Oracle<br/>(Architecture)<br/>GPT-5.2"]
         Explore["🔍 Explore<br/>(Codebase Grep)<br/>Grok Code"]
         Librarian["📚 Librarian<br/>(Docs/OSS)<br/>GLM-4.7"]
@@ -43,24 +45,23 @@ flowchart TB
     User -->|"Describe work"| Prometheus
     Prometheus -->|"Consult"| Metis
     Prometheus -->|"Interview"| User
-    Prometheus -->|"Generate plan"| Plan[".sisyphus/plans/*.md"]
-    Plan -->|"High accuracy?"| Momus
+    Prometheus -->|"Decompose plan"| BeadsCreate
+    BeadsCreate -->|"High accuracy?"| Momus
     Momus -->|"OKAY / REJECT"| Prometheus
     
-    User -->|"/start-work"| Orchestrator
-    Plan -->|"Read"| Orchestrator
+    BeadsReady -->|"Pick issue"| Sisyphus
     
-    Orchestrator -->|"task(category)"| Junior
-    Orchestrator -->|"task(agent)"| Oracle
-    Orchestrator -->|"task(agent)"| Explore
-    Orchestrator -->|"task(agent)"| Librarian
-    Orchestrator -->|"task(agent)"| Frontend
+    Sisyphus -->|"task(category)"| Workers
+    Sisyphus -->|"task(agent)"| Oracle
+    Sisyphus -->|"task(agent)"| Explore
+    Sisyphus -->|"task(agent)"| Librarian
+    Sisyphus -->|"task(agent)"| Frontend
     
-    Junior -->|"Results + Learnings"| Orchestrator
-    Oracle -->|"Advice"| Orchestrator
-    Explore -->|"Code patterns"| Orchestrator
-    Librarian -->|"Documentation"| Orchestrator
-    Frontend -->|"UI code"| Orchestrator
+    Workers -->|"Results"| BeadsClose
+    Oracle -->|"Advice"| Sisyphus
+    Explore -->|"Code patterns"| Sisyphus
+    Librarian -->|"Documentation"| Sisyphus
+    Frontend -->|"UI code"| Sisyphus
 ```
 
 ---
@@ -81,7 +82,7 @@ stateDiagram-v2
     Interview --> ClearanceCheck: After each response
     
     ClearanceCheck --> Interview: Requirements unclear
-    ClearanceCheck --> PlanGeneration: All requirements clear
+    ClearanceCheck --> IssueDecomposition: All requirements clear
     
     state ClearanceCheck {
         [*] --> Check
@@ -92,17 +93,17 @@ stateDiagram-v2
         Check: ✓ Test strategy confirmed?
     }
     
-    PlanGeneration --> MetisConsult: Mandatory gap analysis
-    MetisConsult --> WritePlan: Incorporate findings
-    WritePlan --> HighAccuracyChoice: Present to user
+    IssueDecomposition --> MetisConsult: Mandatory gap analysis
+    MetisConsult --> CreateIssues: Incorporate findings
+    CreateIssues --> HighAccuracyChoice: Present to user
     
     HighAccuracyChoice --> MomusLoop: User wants high accuracy
     HighAccuracyChoice --> Done: User accepts plan
     
-    MomusLoop --> WritePlan: REJECTED - fix issues
+    MomusLoop --> CreateIssues: REJECTED - fix issues
     MomusLoop --> Done: OKAY - plan approved
     
-    Done --> [*]: Guide to /start-work
+    Done --> [*]: Guide to bd ready
 ```
 
 **Intent-Specific Strategies:**
@@ -118,7 +119,7 @@ Prometheus adapts its interview style based on what you're doing:
 
 ### Metis: The Gap Analyzer
 
-Before Prometheus writes the plan, **Metis catches what Prometheus missed**:
+Before Prometheus finalizes the plan, **Metis catches what Prometheus missed**:
 
 - Hidden intentions in user's request
 - Ambiguities that could derail implementation
@@ -134,7 +135,7 @@ The plan author (Prometheus) has "ADHD working memory" - it makes connections th
 
 For high-accuracy mode, Momus validates plans against **four core criteria**:
 
-1. **Clarity**: Does each task specify WHERE to find implementation details?
+1. **Clarity**: Does each issue specify WHERE to find implementation details?
 2. **Verification**: Are acceptance criteria concrete and measurable?
 3. **Context**: Is there sufficient context to proceed without >10% guesswork?
 4. **Big Picture**: Is the purpose, background, and workflow clear?
@@ -143,50 +144,78 @@ For high-accuracy mode, Momus validates plans against **four core criteria**:
 
 Momus only says "OKAY" when:
 - 100% of file references verified
-- ≥80% of tasks have clear reference sources
-- ≥90% of tasks have concrete acceptance criteria
-- Zero tasks require assumptions about business logic
+- ≥80% of issues have clear reference sources
+- ≥90% of issues have concrete acceptance criteria
+- Zero issues require assumptions about business logic
 - Zero critical red flags
 
 If REJECTED, Prometheus fixes issues and resubmits. **No maximum retry limit.**
 
 ---
 
-## Layer 2: Execution (Atlas)
+## Layer 2: Tracking (Beads Issue Graph)
 
-### The Conductor Mindset
+### Why Beads Over Plan Files
 
-The Orchestrator is like an orchestra conductor: **it doesn't play instruments, it ensures perfect harmony**.
+The legacy approach used `.sisyphus/plans/*.md` files and `boulder.json` for state tracking. Beads replaces this with a proper issue graph:
+
+| Aspect | Legacy Plan Files | Beads |
+|--------|------------------|-------|
+| **State** | `boulder.json` (fragile) | `.beads/` (git-synced) |
+| **Dependencies** | Implicit task ordering | Explicit `bd dep add` |
+| **Resumability** | `/start-work` reads boulder | `bd ready` shows unblocked work |
+| **Visibility** | Read plan file manually | `bd ready`, `bd blocked`, `bd stats` |
+| **Granularity** | Monolithic plan | Individual issues with metadata |
+
+### The Beads Lifecycle
 
 ```mermaid
 flowchart LR
-    subgraph Orchestrator["Atlas"]
-        Read["1. Read Plan"]
-        Analyze["2. Analyze Tasks"]
-        Wisdom["3. Accumulate Wisdom"]
-        Delegate["4. Delegate Tasks"]
-        Verify["5. Verify Results"]
-        Report["6. Final Report"]
-    end
-    
-    Read --> Analyze
-    Analyze --> Wisdom
-    Wisdom --> Delegate
-    Delegate --> Verify
-    Verify -->|"More tasks"| Delegate
-    Verify -->|"All done"| Report
-    
-    Delegate -->|"background=false"| Workers["Workers"]
-    Workers -->|"Results + Learnings"| Verify
+    Create["bd create<br/>(from plan)"] --> Ready["bd ready<br/>(unblocked)"]
+    Ready --> InProgress["bd update<br/>--status in_progress"]
+    InProgress --> Close["bd close<br/>(done)"]
+    Close --> Unblock["Dependents<br/>unblocked"]
+    Unblock --> Ready
 ```
 
-**What Orchestrator CAN do:**
+### Dependency Graph
+
+```
+[Build Frontend]    ──┐
+                      ├──→ [Integration Tests] ──→ [Deploy]
+[Build Backend]     ──┘
+```
+
+```bash
+bd create --title="Build frontend"    --type=task    # beads-001
+bd create --title="Build backend"     --type=task    # beads-002
+bd create --title="Integration tests" --type=task    # beads-003
+bd create --title="Deploy"            --type=task    # beads-004
+bd dep add beads-003 beads-001   # tests depend on frontend
+bd dep add beads-003 beads-002   # tests depend on backend
+bd dep add beads-004 beads-003   # deploy depends on tests
+```
+
+---
+
+## Layer 3: Workers (Specialized Agents)
+
+### Sisyphus: The Orchestrator
+
+Sisyphus is the **conductor** that coordinates work. Key characteristics:
+
+- **Delegates**: Routes work to specialized agents via `task(category, ...)`
+- **Verifies**: Runs `lsp_diagnostics`, test suites, reads changed files
+- **Tracks**: Uses beads to manage issue lifecycle
+
+**What Sisyphus CAN do:**
 - ✅ Read files to understand context
 - ✅ Run commands to verify results
 - ✅ Use lsp_diagnostics to check for errors
 - ✅ Search patterns with grep/glob/ast-grep
+- ✅ Manage beads issues (`bd update`, `bd close`)
 
-**What Orchestrator MUST delegate:**
+**What Sisyphus MUST delegate:**
 - ❌ Writing/editing code files
 - ❌ Fixing bugs
 - ❌ Creating tests
@@ -194,7 +223,7 @@ flowchart LR
 
 ### Wisdom Accumulation
 
-The power of orchestration is **cumulative learning**. After each task:
+The power of orchestration is **cumulative learning**. After each issue:
 
 1. Extract learnings from subagent's response
 2. Categorize into: Conventions, Successes, Failures, Gotchas, Commands
@@ -202,69 +231,17 @@ The power of orchestration is **cumulative learning**. After each task:
 
 This prevents repeating mistakes and ensures consistent patterns.
 
-**Notepad System:**
-
-```
-.sisyphus/notepads/{plan-name}/
-├── learnings.md      # Patterns, conventions, successful approaches
-├── decisions.md      # Architectural choices and rationales
-├── issues.md         # Problems, blockers, gotchas encountered
-├── verification.md   # Test results, validation outcomes
-└── problems.md       # Unresolved issues, technical debt
-```
-
 ### Parallel Execution
 
-Independent tasks run in parallel:
+Independent issues (no dependency relationship) can run in parallel:
 
 ```typescript
-// Orchestrator identifies parallelizable groups from plan
-// Group A: Tasks 2, 3, 4 (no file conflicts)
-task(category="ultrabrain", prompt="Task 2...")
-task(category="visual-engineering", prompt="Task 3...")
-task(category="general", prompt="Task 4...")
-// All run simultaneously
+// Sisyphus identifies parallelizable issues from beads graph
+// beads-001 and beads-002 have no shared dependencies
+task(category="ultrabrain", prompt="Implement beads-001...")
+task(category="visual-engineering", prompt="Implement beads-002...")
+// Both run simultaneously
 ```
-
----
-
-## Layer 3: Workers (Specialized Agents)
-
-### Sisyphus-Junior: The Task Executor
-
-Junior is the **workhorse** that actually writes code. Key characteristics:
-
-- **Focused**: Cannot delegate (blocked from task tool)
-- **Disciplined**: Obsessive todo tracking
-- **Verified**: Must pass lsp_diagnostics before completion
-- **Constrained**: Cannot modify plan files (READ-ONLY)
-
-**Why Sonnet is Sufficient:**
-
-Junior doesn't need to be the smartest - it needs to be reliable. With:
-1. Detailed prompts from Orchestrator (50-200 lines)
-2. Accumulated wisdom passed forward
-3. Clear MUST DO / MUST NOT DO constraints
-4. Verification requirements
-
-Even a mid-tier model executes precisely. The intelligence is in the **system**, not individual agents.
-
-### System Reminder Mechanism
-
-The hook system ensures Junior never stops halfway:
-
-```
-[SYSTEM REMINDER - TODO CONTINUATION]
-
-You have incomplete todos! Complete ALL before responding:
-- [ ] Implement user service ← IN PROGRESS
-- [ ] Add validation
-- [ ] Write tests
-
-DO NOT respond until all todos are marked completed.
-```
-
-This "boulder pushing" mechanism is why the system is named after Sisyphus.
 
 ---
 
@@ -347,42 +324,41 @@ task(
 
 ---
 
-## The Orchestrator → Junior Workflow
+## The Execution Workflow
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Orchestrator as Atlas
-    participant Junior as Sisyphus-Junior
-    participant Notepad as .sisyphus/notepads/
+    participant Sisyphus as Sisyphus (Orchestrator)
+    participant Beads as Beads (bd CLI)
+    participant Worker as Specialized Agent
     
-    User->>Orchestrator: /start-work
-    Orchestrator->>Orchestrator: Read plan, build parallelization map
+    User->>Beads: bd ready
+    Beads->>User: List unblocked issues
+    User->>Beads: bd update <id> --status in_progress
     
-    loop For each task (parallel when possible)
-        Orchestrator->>Notepad: Read accumulated wisdom
-        Orchestrator->>Orchestrator: Build 7-section prompt
+    loop For each issue (parallel when possible)
+        Sisyphus->>Sisyphus: Build prompt from issue details
         
-        Note over Orchestrator: Prompt Structure:<br/>1. TASK (exact checkbox)<br/>2. EXPECTED OUTCOME<br/>3. REQUIRED SKILLS<br/>4. REQUIRED TOOLS<br/>5. MUST DO<br/>6. MUST NOT DO<br/>7. CONTEXT + Wisdom
+        Note over Sisyphus: Prompt Structure:<br/>1. ISSUE (title + description)<br/>2. EXPECTED OUTCOME<br/>3. REQUIRED SKILLS<br/>4. REQUIRED TOOLS<br/>5. MUST DO<br/>6. MUST NOT DO<br/>7. CONTEXT + Accumulated wisdom
         
-        Orchestrator->>Junior: task(category, load_skills, prompt)
+        Sisyphus->>Worker: task(category, load_skills, prompt)
         
-        Junior->>Junior: Create todos, execute
-        Junior->>Junior: Verify (lsp_diagnostics, tests)
-        Junior->>Notepad: Append learnings
-        Junior->>Orchestrator: Results + completion status
+        Worker->>Worker: Implement, verify
+        Worker->>Worker: Verify (lsp_diagnostics, tests)
+        Worker->>Sisyphus: Results + completion status
         
-        Orchestrator->>Orchestrator: Verify independently
-        Note over Orchestrator: NEVER trust subagent claims<br/>Run lsp_diagnostics at PROJECT level<br/>Run full test suite<br/>Read actual changed files
+        Sisyphus->>Sisyphus: Verify independently
+        Note over Sisyphus: NEVER trust subagent claims<br/>Run lsp_diagnostics at PROJECT level<br/>Run full test suite<br/>Read actual changed files
         
         alt Verification fails
-            Orchestrator->>Junior: Re-delegate with failure context
+            Sisyphus->>Worker: Re-delegate with failure context
         else Verification passes
-            Orchestrator->>Orchestrator: Mark task complete, continue
+            Sisyphus->>Beads: bd close <id>
         end
     end
     
-    Orchestrator->>User: Final report with all results
+    Sisyphus->>User: Final report with all results
 ```
 
 ---
@@ -392,13 +368,13 @@ sequenceDiagram
 ### 1. Separation of Concerns
 
 - **Planning** (Prometheus): High reasoning, interview, strategic thinking
-- **Orchestration** (Atlas): Coordination, verification, wisdom accumulation
-- **Execution** (Junior): Focused implementation, no distractions
+- **Tracking** (Beads): Issue graph, dependency resolution, cross-session state
+- **Execution** (Sisyphus + Workers): Focused implementation, no distractions
 
 ### 2. Explicit Over Implicit
 
-Every Junior prompt includes:
-- Exact task from plan
+Every worker prompt includes:
+- Exact issue from beads
 - Clear success criteria
 - Forbidden actions
 - All accumulated wisdom
@@ -408,7 +384,7 @@ No assumptions. No guessing.
 
 ### 3. Trust But Verify
 
-The Orchestrator **never trusts subagent claims**:
+Sisyphus **never trusts subagent claims**:
 - Runs `lsp_diagnostics` at project level
 - Executes full test suite
 - Reads actual file changes
@@ -430,10 +406,10 @@ Bulk work goes to cost-effective models (Sonnet, Haiku, Flash).
 1. **Enter Prometheus Mode**: Press **Tab** at the prompt
 2. **Describe Your Work**: "I want to add user authentication to my app"
 3. **Answer Interview Questions**: Prometheus will ask about patterns, preferences, constraints
-4. **Review the Plan**: Check `.sisyphus/plans/` for generated work plan
-5. **Run `/start-work`**: Orchestrator takes over
-6. **Observe**: Watch tasks complete with verification
-7. **Done**: All todos complete, code verified, ready to ship
+4. **Review Issues**: Run `bd ready` to see the decomposed work with dependencies
+5. **Execute**: Pick issues with `bd update <id> --status in_progress`, implement, `bd close <id>`
+6. **Observe**: Watch issues complete with verification
+7. **Done**: All issues closed, code verified, ready to ship
 
 ---
 

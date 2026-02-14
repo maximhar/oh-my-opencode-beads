@@ -1,6 +1,7 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 
 import type { BackgroundManager } from "../../features/background-agent"
+import { readActiveWorkState } from "../../features/boulder-state"
 import type { ToolPermission } from "../../features/hook-message-injector"
 import { log } from "../../shared/logger"
 
@@ -11,7 +12,6 @@ import {
   HOOK_NAME,
 } from "./constants"
 import { isLastAssistantMessageAborted } from "./abort-detection"
-import { getIncompleteCount } from "./todo"
 import type { MessageInfo, ResolvedMessageInfo, Todo } from "./types"
 import type { SessionStateStore } from "./session-state"
 import { startCountdown } from "./countdown"
@@ -74,24 +74,36 @@ export async function handleSessionIdle(args: {
     log(`[${HOOK_NAME}] Messages fetch failed, continuing`, { sessionID, error: String(error) })
   }
 
-  let todos: Todo[] = []
-  try {
-    const response = await ctx.client.session.todo({ path: { id: sessionID } })
-    todos = (response.data ?? response) as Todo[]
-  } catch (error) {
-    log(`[${HOOK_NAME}] Todo fetch failed`, { sessionID, error: String(error) })
-    return
-  }
+  let workItemLabel: string | undefined
+  let incompleteCount = 0
+  let total = 0
 
-  if (!todos || todos.length === 0) {
-    log(`[${HOOK_NAME}] No todos`, { sessionID })
-    return
-  }
+  const activeWorkState = readActiveWorkState(ctx.directory)
+  if (activeWorkState?.session_ids?.includes(sessionID) && activeWorkState.active_issue_id) {
+    workItemLabel = activeWorkState.active_issue_title ?? activeWorkState.active_issue_id
+    incompleteCount = 1
+    total = 1
+  } else {
+    let todos: Todo[] = []
+    try {
+      const response = await ctx.client.session.todo({ path: { id: sessionID } })
+      todos = (response.data ?? response) as Todo[]
+    } catch (error) {
+      log(`[${HOOK_NAME}] Todo fetch failed`, { sessionID, error: String(error) })
+      return
+    }
 
-  const incompleteCount = getIncompleteCount(todos)
-  if (incompleteCount === 0) {
-    log(`[${HOOK_NAME}] All todos complete`, { sessionID, total: todos.length })
-    return
+    if (!todos || todos.length === 0) {
+      log(`[${HOOK_NAME}] No active work items`, { sessionID })
+      return
+    }
+
+    incompleteCount = todos.filter((todo) => todo.status !== "completed" && todo.status !== "cancelled").length
+    total = todos.length
+    if (incompleteCount === 0) {
+      log(`[${HOOK_NAME}] All tracked work complete`, { sessionID, total })
+      return
+    }
   }
 
   if (state.inFlight) {
@@ -150,7 +162,8 @@ export async function handleSessionIdle(args: {
     ctx,
     sessionID,
     incompleteCount,
-    total: todos.length,
+    total,
+    workItemLabel,
     resolvedInfo,
     backgroundManager,
     skipAgents,

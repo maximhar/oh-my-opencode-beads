@@ -78,7 +78,7 @@ export function createToolGuardHooks(args: {
 
   const tasksTodowriteDisabler = isHookEnabled("tasks-todowrite-disabler")
     ? safeHook("tasks-todowrite-disabler", () =>
-        createTasksTodowriteDisablerHook({ experimental: pluginConfig.experimental }))
+        createTasksTodowriteDisablerHook())
     : null
 
   const writeExistingFileGuard = isHookEnabled("write-existing-file-guard")

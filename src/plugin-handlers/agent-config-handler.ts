@@ -65,7 +65,6 @@ export async function applyAgentConfig(params: {
     params.pluginConfig.browser_automation_engine?.provider ?? "playwright";
   const currentModel = params.config.model as string | undefined;
   const disabledSkills = new Set<string>(params.pluginConfig.disabled_skills ?? []);
-  const useTaskSystem = params.pluginConfig.experimental?.task_system ?? false;
 
   const builtinAgents = await createBuiltinAgents(
     migratedDisabledAgents,
@@ -79,7 +78,6 @@ export async function applyAgentConfig(params: {
     browserProvider,
     currentModel,
     disabledSkills,
-    useTaskSystem,
   );
 
   const includeClaudeAgents = params.pluginConfig.claude_code?.agents ?? true;
@@ -113,7 +111,6 @@ export async function applyAgentConfig(params: {
     agentConfig["sisyphus-junior"] = createSisyphusJuniorAgentWithOverrides(
       params.pluginConfig.agents?.["sisyphus-junior"],
       undefined,
-      useTaskSystem,
     );
 
     if (builderEnabled) {

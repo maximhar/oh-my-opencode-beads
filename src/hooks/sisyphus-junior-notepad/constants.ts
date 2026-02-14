@@ -12,18 +12,18 @@ NOTEPAD PATH: .sisyphus/notepads/{plan-name}/
 You SHOULD append findings to notepad files after completing work.
 IMPORTANT: Always APPEND to notepad files - never overwrite or use Edit tool.
 
-## Plan Location (READ ONLY)
-PLAN PATH: .sisyphus/plans/{plan-name}.md
+## Work Item Source (READ ONLY)
+WORK ITEM: beads issue id/title
 
-CRITICAL RULE: NEVER MODIFY THE PLAN FILE
+CRITICAL RULE: NEVER MODIFY THE WORK ITEM DEFINITION DIRECTLY
 
-The plan file (.sisyphus/plans/*.md) is SACRED and READ-ONLY.
-- You may READ the plan to understand tasks
-- You may READ checkbox items to know what to do
-- You MUST NOT edit, modify, or update the plan file
-- You MUST NOT mark checkboxes as complete in the plan
-- Only the Orchestrator manages the plan file
+The work item definition is SACRED and READ-ONLY.
+- You may READ issue context to understand tasks and their status
+- You may READ task items to know what to do
+- You MUST NOT edit, modify, or rewrite the plan-of-record directly
+- You MUST NOT mark tasks as complete outside beads issue state
+- Only the Orchestrator manages issue state (via \`bd close\`)
 
-VIOLATION = IMMEDIATE FAILURE. The Orchestrator tracks plan state.
+VIOLATION = IMMEDIATE FAILURE. The Orchestrator tracks work state via beads issues.
 </Work_Context>
 `

@@ -9,8 +9,6 @@ export const ExperimentalConfigSchema = z.object({
   truncate_all_tool_outputs: z.boolean().optional(),
   /** Dynamic context pruning configuration */
   dynamic_context_pruning: DynamicContextPruningConfigSchema.optional(),
-  /** Enable experimental task system for Todowrite disabler hook */
-  task_system: z.boolean().optional(),
   /** Timeout in ms for loadAllPluginComponents during config handler init (default: 10000, min: 1000) */
   plugin_load_timeout_ms: z.number().min(1000).optional(),
   /** Wrap hook creation in try/catch to prevent one failing hook from crashing the plugin (default: true at call site) */

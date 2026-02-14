@@ -7,9 +7,7 @@ export function applyToolConfig(params: {
   pluginConfig: OhMyOpenCodeConfig;
   agentResult: Record<string, unknown>;
 }): void {
-  const denyTodoTools = params.pluginConfig.experimental?.task_system
-    ? { todowrite: "deny", todoread: "deny" }
-    : {}
+  const denyTodoTools = { todowrite: "deny", todoread: "deny" }
 
   params.config.tools = {
     ...(params.config.tools as Record<string, unknown>),
@@ -19,9 +17,8 @@ export function applyToolConfig(params: {
     LspCodeActionResolve: false,
     "task_*": false,
     teammate: false,
-    ...(params.pluginConfig.experimental?.task_system
-      ? { todowrite: false, todoread: false }
-      : {}),
+    todowrite: false,
+    todoread: false,
   };
 
   const isCliRunMode = process.env.OPENCODE_CLI_RUN_MODE === "true";

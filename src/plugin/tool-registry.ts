@@ -35,7 +35,6 @@ import type { SkillContext } from "./skill-context"
 
 export type ToolRegistryResult = {
   filteredTools: ToolsRecord
-  taskSystemEnabled: boolean
 }
 
 export function createToolRegistry(args: {
@@ -107,15 +106,12 @@ export function createToolRegistry(args: {
     skills: skillContext.mergedSkills,
   })
 
-  const taskSystemEnabled = pluginConfig.experimental?.task_system ?? false
-  const taskToolsRecord: Record<string, ToolDefinition> = taskSystemEnabled
-    ? {
-        task_create: createTaskCreateTool(pluginConfig, ctx),
-        task_get: createTaskGetTool(pluginConfig),
-        task_list: createTaskList(pluginConfig),
-        task_update: createTaskUpdateTool(pluginConfig, ctx),
-      }
-    : {}
+  const taskToolsRecord: Record<string, ToolDefinition> = {
+    task_create: createTaskCreateTool(pluginConfig, ctx),
+    task_get: createTaskGetTool(pluginConfig),
+    task_list: createTaskList(pluginConfig),
+    task_update: createTaskUpdateTool(pluginConfig, ctx),
+  }
 
   const allTools: Record<string, ToolDefinition> = {
     ...builtinTools,
@@ -138,6 +134,5 @@ export function createToolRegistry(args: {
 
   return {
     filteredTools,
-    taskSystemEnabled,
   }
 }

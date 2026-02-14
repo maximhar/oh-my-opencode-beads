@@ -424,7 +424,7 @@ YOU MUST END YOUR RESPONSE WITH THIS SECTION.
 \`\`\`markdown
 ## TODO List (ADD THESE)
 
-> CALLER: Add these TODOs using TodoWrite/TaskCreate and execute by wave.
+> CALLER: Register these tasks as beads issues via \`bd create\` and execute by wave.
 
 ### Wave 1 (Start Immediately - No Dependencies)
 

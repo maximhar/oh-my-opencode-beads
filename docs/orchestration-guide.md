@@ -6,7 +6,8 @@
 |------------|----------|-------------|
 | **Simple** | Just prompt | Simple tasks, quick fixes, single-file changes |
 | **Complex + Lazy** | Just type `ulw` or `ultrawork` | Complex tasks where explaining context is tedious. Agent figures it out. |
-| **Complex + Precise** | `@plan` → `/start-work` | Precise, multi-step work requiring true orchestration. Prometheus plans, Atlas executes. |
+| **Complex + Tracked** | Beads-driven workflow | Multi-step work requiring dependency tracking and cross-session continuity. Use `bd create` → `bd ready` → `bd close`. |
+| **Complex + Precise** | `@plan` → beads execution | Precise, multi-step work requiring planning. Prometheus plans, then work is tracked and executed via beads issues. |
 
 **Decision Flow:**
 
@@ -15,8 +16,8 @@ Is it a quick fix or simple task?
   └─ YES → Just prompt normally
   └─ NO  → Is explaining the full context tedious?
              └─ YES → Type "ulw" and let the agent figure it out
-             └─ NO  → Do you need precise, verifiable execution?
-                        └─ YES → Use @plan for Prometheus planning, then /start-work
+             └─ NO  → Do you need tracked, verifiable execution?
+                        └─ YES → Use beads: bd create issues, track with bd ready/update/close
                         └─ NO  → Just use "ulw"
 ```
 
@@ -31,13 +32,11 @@ Traditional AI agents often mix planning and execution, leading to context pollu
 Oh-My-OpenCode solves this by clearly separating two roles:
 
 1. **Prometheus (Planner)**: A pure strategist who never writes code. Establishes perfect plans through interviews and analysis.
-2. **Atlas (Executor)**: An orchestrator who executes plans. Delegates work to specialized agents and never stops until completion.
+2. **Beads-Driven Execution**: Work is decomposed into trackable issues with dependencies, executed via `bd` CLI. The issue graph provides cross-session continuity, dependency ordering, and progress visibility.
 
 ---
 
-## 2. Prometheus Invocation: Agent Switch vs @plan
-
-A common source of confusion is how to invoke Prometheus for planning. **Both methods achieve the same result** - use whichever feels natural.
+## 2. Planning: Prometheus and @plan
 
 ### Method 1: Switch to Prometheus Agent (Tab → Select Prometheus)
 
@@ -46,7 +45,7 @@ A common source of confusion is how to invoke Prometheus for planning. **Both me
 2. Select "Prometheus" from the agent list
 3. Describe your work: "I want to refactor the auth system"
 4. Answer interview questions
-5. Prometheus creates plan in .sisyphus/plans/{name}.md
+5. Prometheus creates a plan; work is decomposed into beads issues
 ```
 
 ### Method 2: Use @plan Command (in Sisyphus)
@@ -56,7 +55,7 @@ A common source of confusion is how to invoke Prometheus for planning. **Both me
 2. Type: @plan "I want to refactor the auth system"
 3. The @plan command automatically switches to Prometheus
 4. Answer interview questions
-5. Prometheus creates plan in .sisyphus/plans/{name}.md
+5. Plan output is captured; issues are created via bd create
 ```
 
 ### Which Should You Use?
@@ -68,87 +67,65 @@ A common source of confusion is how to invoke Prometheus for planning. **Both me
 | **Want explicit control** | Switch to Prometheus agent | Clear separation of planning vs execution contexts |
 | **Quick planning interrupt** | Use @plan | Fastest path from current context |
 
-**Key Insight**: Both methods trigger the same Prometheus planning flow. The @plan command is simply a convenience shortcut that:
-1. Detects the `@plan` keyword in your message
-2. Routes the request to Prometheus automatically
-3. Returns you to Sisyphus after planning completes
+**Key Insight**: Both methods trigger the same Prometheus planning flow. The @plan command is simply a convenience shortcut.
 
 ---
 
-## 3. /start-work Behavior in Fresh Sessions
+## 3. Beads-Driven Execution
 
-One of the most powerful features of the orchestration system is **session continuity**. Understanding how `/start-work` behaves across sessions prevents confusion.
+After planning, work is tracked and executed through the **beads issue graph**. This replaces the legacy plan-file + `/start-work` + `boulder.json` workflow.
 
-### What Happens When You Run /start-work
+### Starting Work
 
-```
-User: /start-work
-    ↓
-[start-work hook activates]
-    ↓
-Check: Does .sisyphus/boulder.json exist?
-    ↓
-    ├─ YES (existing work) → RESUME MODE
-    │   - Read the existing boulder state
-    │   - Calculate progress (checked vs unchecked boxes)
-    │   - Inject continuation prompt with remaining tasks
-    │   - Atlas continues where you left off
-    │
-    └─ NO (fresh start) → INIT MODE
-        - Find the most recent plan in .sisyphus/plans/
-        - Create new boulder.json tracking this plan
-        - Switch session agent to Atlas
-        - Begin execution from task 1
+```bash
+bd ready                              # Find issues with no blockers
+bd show <id>                          # Review issue details
+bd update <id> --status in_progress   # Claim work
+# ... implement the work ...
+bd close <id>                         # Mark complete
 ```
 
-### Session Continuity Explained
+### Session Continuity
 
-The `boulder.json` file tracks:
-- **active_plan**: Path to the current plan file
-- **session_ids**: All sessions that have worked on this plan
-- **started_at**: When work began
-- **plan_name**: Human-readable plan identifier
-
-**Example Timeline:**
+Beads issues persist in `.beads/` and sync with git. Session interruptions don't lose progress:
 
 ```
 Monday 9:00 AM
   └─ @plan "Build user authentication"
   └─ Prometheus interviews and creates plan
-  └─ User: /start-work
-  └─ Atlas begins execution, creates boulder.json
-  └─ Task 1 complete, Task 2 in progress...
+  └─ Issues created via bd create (with dependencies)
+  └─ bd ready → pick first available issue
+  └─ bd update <id> --status in_progress
+  └─ Work on issue, close it
   └─ [Session ends - computer crash, user logout, etc.]
 
 Monday 2:00 PM (NEW SESSION)
-  └─ User opens new session (agent = Sisyphus by default)
-  └─ User: /start-work
-  └─ [start-work hook reads boulder.json]
-  └─ "Resuming 'Build user authentication' - 3 of 8 tasks complete"
-  └─ Atlas continues from Task 3 (no context lost)
+  └─ bd ready → see remaining issues (dependencies resolved automatically)
+  └─ Continue from where you left off
 ```
 
-### When You DON'T Need to Manually Switch to Atlas
+### Dependency Tracking
 
-Atlas is **automatically activated** when you run `/start-work`. You don't need to:
-- Switch to Atlas agent manually
-- Remember which agent you were using
-- Worry about session continuity
+```bash
+bd create --title="Build frontend"  --type=task      # beads-001
+bd create --title="Build backend"   --type=task      # beads-002
+bd create --title="Integration tests" --type=task    # beads-003
+bd dep add beads-003 beads-001   # tests depend on frontend
+bd dep add beads-003 beads-002   # tests depend on backend
 
-The `/start-work` command handles all of this.
+bd ready          # Shows beads-001, beads-002 (no blockers)
+bd blocked        # Shows beads-003 (blocked by 001, 002)
+```
 
-### When You MIGHT Want to Manually Switch to Atlas
+### Why Beads Over Plan Files
 
-There are rare cases where manual agent switching helps:
-
-| Scenario | Action | Why |
-|----------|--------|-----|
-| **Plan file was edited manually** | Switch to Atlas, read plan directly | Bypass boulder.json resume logic |
-| **Debugging orchestration issues** | Switch to Atlas for visibility | See Atlas-specific system prompts |
-| **Force fresh execution** | Delete boulder.json, then /start-work | Start from task 1 instead of resuming |
-| **Multi-plan management** | Switch to Atlas to select specific plan | Override auto-selection |
-
-**Command to manually switch:** Press `Tab` → Select "Atlas"
+| Aspect | Legacy Plan Files | Beads |
+|--------|------------------|-------|
+| **Persistence** | `.sisyphus/plans/*.md` + `boulder.json` | `.beads/` directory, git-synced |
+| **Dependencies** | Implicit (task ordering) | Explicit (`bd dep add`) |
+| **Cross-session** | `boulder.json` state | Issue status persists naturally |
+| **Visibility** | Read plan file manually | `bd ready`, `bd blocked`, `bd stats` |
+| **Granularity** | Monolithic plan file | Individual trackable issues |
 
 ---
 
@@ -163,7 +140,7 @@ Another common question: **When should I use Hephaestus vs just typing `ulw` in 
 | **Model** | GPT-5.2 Codex (medium reasoning) | Claude Opus 4.5 (your default) |
 | **Approach** | Autonomous deep worker | Keyword-activated ultrawork mode |
 | **Best For** | Complex architectural work, deep reasoning | General complex tasks, "just do it" scenarios |
-| **Planning** | Self-plans during execution | Uses Prometheus plans if available |
+| **Planning** | Self-plans during execution | Uses Prometheus plans or beads issues if available |
 | **Delegation** | Heavy use of explore/librarian agents | Uses category-based delegation |
 | **Temperature** | 0.1 | 0.1 |
 
@@ -210,9 +187,9 @@ Use the `ulw` keyword in Sisyphus when:
    - Don't want to write detailed requirements
    - Trust the agent to explore and decide
 
-4. **You want to leverage existing plans**
-   - If a Prometheus plan exists, `ulw` mode can use it
-   - Falls back to autonomous exploration if no plan
+4. **You want to leverage existing plans or beads issues**
+   - If beads issues exist, `ulw` mode can reference them
+   - Falls back to autonomous exploration if no tracked work
 
 **Example:**
 ```
@@ -233,7 +210,7 @@ Use the `ulw` keyword in Sisyphus when:
 | You manually switch to Hephaestus agent | You type `ulw` in any Sisyphus session |
 | GPT-5.2 Codex with medium reasoning | Your configured default model |
 | Optimized for autonomous deep work | Optimized for general execution |
-| Always uses explore-first approach | Respects existing plans if available |
+| Always uses explore-first approach | Respects existing beads issues if available |
 | "Smart intern that needs no supervision" | "Smart intern that follows your workflow" |
 
 ### Recommendation
@@ -255,17 +232,17 @@ flowchart TD
         Metis --> Prometheus
         Prometheus --> Momus[Momus<br>Reviewer]
         Momus --> Prometheus
-        Prometheus --> PlanFile["/.sisyphus/plans/{name}.md"]
+        Prometheus --> BeadsIssues["Beads Issues<br>(bd create)"]
     end
     
-    PlanFile --> StartWork[//start-work/]
-    StartWork --> BoulderState[boulder.json]
+    BeadsIssues --> BeadsReady["bd ready"]
+    BeadsReady --> Execution
     
     subgraph Execution Phase
-        BoulderState --> Atlas[Atlas<br>Orchestrator]
-        Atlas --> Oracle[Oracle]
-        Atlas --> Frontend[Frontend<br>Engineer]
-        Atlas --> Explore[Explore]
+        Execution[Agent picks issue<br>bd update --status in_progress] --> Oracle[Oracle]
+        Execution --> Frontend[Frontend<br>Engineer]
+        Execution --> Explore[Explore]
+        Execution --> Close["bd close"]
     end
 ```
 
@@ -276,8 +253,8 @@ flowchart TD
 ### 🔮 Prometheus (The Planner)
 
 - **Model**: `anthropic/claude-opus-4-6`
-- **Role**: Strategic planning, requirements interviews, work plan creation
-- **Constraint**: **READ-ONLY**. Can only create/modify markdown files within `.sisyphus/` directory.
+- **Role**: Strategic planning, requirements interviews, work decomposition into beads issues
+- **Constraint**: **READ-ONLY**. Can only create/modify markdown files within `.sisyphus/` directory and create beads issues.
 - **Characteristic**: Never writes code directly, focuses solely on "how to do it".
 
 ### 🦉 Metis (The Plan Consultant)
@@ -292,11 +269,11 @@ flowchart TD
 - **Function**: Rejects and demands revisions until the plan is perfect.
 - **Trigger**: Activated when user requests "high accuracy".
 
-### ⚡ Atlas (The Plan Executor)
+### ⚡ Beads Execution
 
-- **Model**: `anthropic/claude-sonnet-4-5` (Extended Thinking 32k)
-- **Role**: Execution and delegation
-- **Characteristic**: Doesn't do everything directly, actively delegates to specialized agents (Frontend, Librarian, etc.).
+- **Tool**: `bd` CLI (beads issue tracker)
+- **Role**: Work tracking, dependency management, cross-session continuity
+- **Characteristic**: Issues form a dependency graph. `bd ready` surfaces unblocked work. `bd close` marks completion and unblocks dependents.
 
 ---
 
@@ -310,22 +287,23 @@ Prometheus starts in **interview mode** by default. Instead of immediately creat
 2. **Context Collection**: Investigates codebase and external documentation through `explore` and `librarian` agents.
 3. **Draft Creation**: Continuously records discussion content in `.sisyphus/drafts/`.
 
-### Phase 2: Plan Generation
+### Phase 2: Plan Generation & Issue Decomposition
 
 When the user requests "Make it a plan", plan generation begins.
 
 1. **Metis Consultation**: Confirms any missed requirements or risk factors.
-2. **Plan Creation**: Writes a single plan in `.sisyphus/plans/{name}.md` file.
-3. **Handoff**: Once plan creation is complete, guides user to use `/start-work` command.
+2. **Plan Creation**: Writes a plan document and decomposes work into beads issues via `bd create`, with dependencies established via `bd dep add`.
+3. **Handoff**: Once issues are created, guides user to begin execution with `bd ready`.
 
 ### Phase 3: Execution
 
-When the user enters `/start-work`, the execution phase begins.
+Work proceeds through the beads issue graph:
 
-1. **State Management**: Creates/reads `boulder.json` file to track current plan and session ID.
-2. **Task Execution**: Atlas reads the plan and processes TODOs one by one.
-3. **Delegation**: UI work is delegated to Frontend agent, complex logic to Oracle.
-4. **Continuity**: Even if the session is interrupted, work continues in the next session through `boulder.json`.
+1. **Find Work**: `bd ready` shows issues with no unresolved blockers.
+2. **Claim Work**: `bd update <id> --status in_progress`.
+3. **Execute**: Agent or user implements the work, delegating to specialized agents as needed.
+4. **Complete**: `bd close <id>` marks done and unblocks dependent issues.
+5. **Continuity**: Even if the session is interrupted, `bd ready` in a new session shows remaining work.
 
 ---
 
@@ -338,9 +316,17 @@ Invokes Prometheus to start a planning session from Sisyphus.
 - Example: `@plan "I want to refactor the authentication system to NextAuth"`
 - Effect: Routes to Prometheus, then returns to Sisyphus when planning completes
 
-### `/start-work`
+### `bd ready` / `bd update` / `bd close`
 
-Executes the generated plan.
+The primary execution workflow:
+
+- **`bd ready`**: Lists issues with no blockers, ready to work on
+- **`bd update <id> --status in_progress`**: Claim an issue
+- **`bd close <id>`**: Mark an issue complete
+
+### `/start-work` (Legacy Fallback)
+
+> **Legacy**: This command uses `.sisyphus/plans/` and `boulder.json` for plan-file orchestration. Prefer the beads workflow above.
 
 - **Fresh session**: Finds plan in `.sisyphus/plans/` and enters execution mode
 - **Existing boulder**: Resumes from where you left off (reads boulder.json)
@@ -353,7 +339,6 @@ Press `Tab` at the prompt to see available agents:
 | Agent | When to Switch |
 |-------|---------------|
 | **Prometheus** | You want to create a detailed work plan |
-| **Atlas** | You want to manually control plan execution (rare) |
 | **Hephaestus** | You need GPT-5.2 Codex for deep autonomous work |
 | **Sisyphus** | Return to default agent for normal prompting |
 
@@ -366,14 +351,14 @@ You can control related features in `oh-my-opencode.json`.
 ```jsonc
 {
   "sisyphus_agent": {
-    "disabled": false,           // Enable Atlas orchestration (default: false)
+    "disabled": false,           // Enable orchestration (default: false)
     "planner_enabled": true,     // Enable Prometheus (default: true)
     "replace_plan": true         // Replace default plan agent with Prometheus (default: true)
   },
   
   // Hook settings (add to disable)
   "disabled_hooks": [
-    // "start-work",             // Disable execution trigger
+    // "start-work",             // Disable legacy execution trigger
     // "prometheus-md-only"      // Remove Prometheus write restrictions (not recommended)
   ]
 }
@@ -383,13 +368,13 @@ You can control related features in `oh-my-opencode.json`.
 
 ## 10. Best Practices
 
-1. **Don't Rush Planning**: Invest sufficient time in the interview with Prometheus. The more perfect the plan, the faster the execution.
+1. **Don't Rush Planning**: Invest sufficient time in the interview with Prometheus. The more precise the issue decomposition, the faster the execution.
 
-2. **Single Plan Principle**: No matter how large the task, contain all TODOs in one plan file (`.md`). This prevents context fragmentation.
+2. **Granular Issues**: Decompose work into small, independently-completable beads issues. Each issue should be achievable in a single focused session.
 
-3. **Active Delegation**: During execution, delegate to specialized agents via `task` rather than modifying code directly.
+3. **Use Dependencies**: Establish `bd dep add` relationships to ensure correct execution order. `bd ready` automatically surfaces unblocked work.
 
-4. **Trust /start-work Continuity**: Don't worry about session interruptions. `/start-work` will always resume your work from boulder.json.
+4. **Trust Beads Continuity**: Don't worry about session interruptions. `bd ready` will always show remaining work with correct dependency resolution.
 
 5. **Use `ulw` for Convenience**: When in doubt, type `ulw` and let the system figure out the best approach.
 
@@ -403,15 +388,16 @@ You can control related features in `oh-my-opencode.json`.
 
 Prometheus enters **interview mode** by default. It will ask you questions about your requirements. Answer them, then say "make it a plan" when ready.
 
-### "/start-work says 'no active plan found'"
+### "bd ready shows no issues"
 
 Either:
-- No plans exist in `.sisyphus/plans/` → Create one with Prometheus first
-- Plans exist but boulder.json points elsewhere → Delete `.sisyphus/boulder.json` and retry
+- No issues have been created → Create them with `bd create` or use Prometheus to decompose work
+- All issues are blocked → Run `bd blocked` to see what's blocking them
+- All issues are closed → Run `bd list --status=closed` to verify
 
-### "I'm in Atlas but I want to switch back to normal mode"
+### "How do I resume work from a previous session?"
 
-Type `exit` or start a new session. Atlas is primarily entered via `/start-work` - you don't typically "switch to Atlas" manually.
+Run `bd ready` in any new session. It shows all issues with no unresolved blockers, regardless of which session created them.
 
 ### "What's the difference between @plan and just switching to Prometheus?"
 
@@ -422,3 +408,7 @@ Type `exit` or start a new session. Atlas is primarily entered via `/start-work`
 **For most tasks**: Type `ulw` in Sisyphus.
 
 **Use Hephaestus when**: You specifically need GPT-5.2 Codex's reasoning style for deep architectural work or complex debugging.
+
+### "Can I still use /start-work and boulder.json?"
+
+Yes, as a **legacy fallback**. The `/start-work` command and `.sisyphus/plans/` workflow still function for backward compatibility. However, beads-driven execution (`bd ready` → `bd update` → `bd close`) is the recommended approach.

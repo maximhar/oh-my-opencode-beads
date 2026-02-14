@@ -29,7 +29,7 @@ Performs intelligent, deterministic refactoring with full codebase awareness. Un
 1. **Understands your intent** - Analyzes what you actually want to achieve
 2. **Maps the codebase** - Builds a definitive codemap before touching anything
 3. **Assesses risk** - Evaluates test coverage and determines verification strategy
-4. **Plans meticulously** - Creates a detailed plan with Plan agent
+4. **Breaks down the work** - Creates beads issues for each refactoring step
 5. **Executes precisely** - Step-by-step refactoring with LSP and AST-grep
 6. **Verifies constantly** - Runs tests after each change to ensure zero regression
 
@@ -74,26 +74,24 @@ Options I see:
 Should I proceed with [recommendation], or would you prefer differently?
 \`\`\`
 
-## Step 0.3: Create Initial Todos
+## Step 0.3: Create Initial Issues
 
-**IMMEDIATELY after understanding the request, create todos:**
+**IMMEDIATELY after understanding the request, create beads issues:**
 
 \`\`\`
-TodoWrite([
-  {"id": "phase-1", "content": "PHASE 1: Codebase Analysis - launch parallel explore agents", "status": "pending", "priority": "high"},
-  {"id": "phase-2", "content": "PHASE 2: Build Codemap - map dependencies and impact zones", "status": "pending", "priority": "high"},
-  {"id": "phase-3", "content": "PHASE 3: Test Assessment - analyze test coverage and verification strategy", "status": "pending", "priority": "high"},
-  {"id": "phase-4", "content": "PHASE 4: Plan Generation - invoke Plan agent for detailed refactoring plan", "status": "pending", "priority": "high"},
-  {"id": "phase-5", "content": "PHASE 5: Execute Refactoring - step-by-step with continuous verification", "status": "pending", "priority": "high"},
-  {"id": "phase-6", "content": "PHASE 6: Final Verification - full test suite and regression check", "status": "pending", "priority": "high"}
-])
+bd create --title="PHASE 1: Codebase Analysis - launch parallel explore agents" --type=task --priority=1
+bd create --title="PHASE 2: Build Codemap - map dependencies and impact zones" --type=task --priority=1
+bd create --title="PHASE 3: Test Assessment - analyze test coverage and verification strategy" --type=task --priority=1
+bd create --title="PHASE 4: Refactoring Breakdown - decompose into atomic steps" --type=task --priority=1
+bd create --title="PHASE 5: Execute Refactoring - step-by-step with continuous verification" --type=task --priority=1
+bd create --title="PHASE 6: Final Verification - full test suite and regression check" --type=task --priority=1
 \`\`\`
 
 ---
 
 # PHASE 1: CODEBASE ANALYSIS (PARALLEL EXPLORATION)
 
-**Mark phase-1 as in_progress.**
+**Mark Phase 1 issue as in_progress: \`bd update <phase-1-id> --status=in_progress\`.**
 
 ## 1.1: Launch Parallel Explore Agents (BACKGROUND)
 
@@ -195,13 +193,13 @@ background_output(task_id="[agent_2_id]")
 ...
 \`\`\`
 
-**Mark phase-1 as completed after all results collected.**
+**Close Phase 1 issue: \`bd close <phase-1-id>\` after all results collected.**
 
 ---
 
 # PHASE 2: BUILD CODEMAP (DEPENDENCY MAPPING)
 
-**Mark phase-2 as in_progress.**
+**Mark Phase 2 issue as in_progress: \`bd update <phase-2-id> --status=in_progress\`.**
 
 ## 2.1: Construct Definitive Codemap
 
@@ -249,13 +247,13 @@ Based on codemap:
 - **Safe to change**: [isolated code zones]
 - **Requires migration**: [breaking changes impact]
 
-**Mark phase-2 as completed.**
+**Close Phase 2 issue: \`bd close <phase-2-id>\`.**
 
 ---
 
 # PHASE 3: TEST ASSESSMENT (VERIFICATION STRATEGY)
 
-**Mark phase-3 as in_progress.**
+**Mark Phase 3 issue as in_progress: \`bd update <phase-3-id> --status=in_progress\`.**
 
 ## 3.1: Detect Test Infrastructure
 
@@ -334,20 +332,24 @@ After each refactoring step:
 - [API contract that must not change]
 \`\`\`
 
-**Mark phase-3 as completed.**
+**Close Phase 3 issue: \`bd close <phase-3-id>\`.**
 
 ---
 
-# PHASE 4: PLAN GENERATION (PLAN AGENT)
+# PHASE 4: REFACTORING BREAKDOWN (ISSUE DECOMPOSITION)
 
-**Mark phase-4 as in_progress.**
+**Mark Phase 4 issue as in_progress: \`bd update <phase-4-id> --status=in_progress\`.**
 
-## 4.1: Invoke Plan Agent
+## 4.1: Decompose Refactoring Steps
+
+Based on the codemap and test assessment, break the refactoring into atomic steps.
+Use an oracle agent for complex architectural decisions if needed:
 
 \`\`\`
-Task(
-  subagent_type="plan",
-  prompt="Create a detailed refactoring plan:
+call_omo_agent(
+  subagent_type="oracle",
+  run_in_background=false,
+  prompt="Given the codemap and test coverage, decompose this refactoring into atomic steps:
 
   ## Refactoring Goal
   [User's original request]
@@ -373,44 +375,43 @@ Task(
 )
 \`\`\`
 
-## 4.2: Review and Validate Plan
+## 4.2: Review and Validate Breakdown
 
-After receiving plan from Plan agent:
+After receiving the decomposition:
 
 1. **Verify completeness**: All identified files addressed?
 2. **Verify safety**: Each step reversible?
 3. **Verify order**: Dependencies respected?
 4. **Verify verification**: Test commands specified?
 
-## 4.3: Register Detailed Todos
+## 4.3: Register Step Issues
 
-Convert Plan agent output into granular todos:
+Create beads issues for each refactoring step, with dependencies:
 
 \`\`\`
-TodoWrite([
-  // Each step from the plan becomes a todo
-  {"id": "refactor-1", "content": "Step 1: [description]", "status": "pending", "priority": "high"},
-  {"id": "verify-1", "content": "Verify Step 1: run tests", "status": "pending", "priority": "high"},
-  {"id": "refactor-2", "content": "Step 2: [description]", "status": "pending", "priority": "medium"},
-  {"id": "verify-2", "content": "Verify Step 2: run tests", "status": "pending", "priority": "medium"},
-  // ... continue for all steps
-])
+bd create --title="Step 1: [description]" --type=task --priority=1
+bd create --title="Verify Step 1: run tests" --type=task --priority=1
+bd dep add <verify-1-id> <step-1-id>  // verification depends on step completion
+bd create --title="Step 2: [description]" --type=task --priority=2
+bd create --title="Verify Step 2: run tests" --type=task --priority=2
+bd dep add <verify-2-id> <step-2-id>
+// ... continue for all steps
 \`\`\`
 
-**Mark phase-4 as completed.**
+**Close Phase 4 issue: \`bd close <phase-4-id>\`.**
 
 ---
 
 # PHASE 5: EXECUTE REFACTORING (DETERMINISTIC EXECUTION)
 
-**Mark phase-5 as in_progress.**
+**Mark Phase 5 issue as in_progress: \`bd update <phase-5-id> --status=in_progress\`.**
 
 ## 5.1: Execution Protocol
 
 For EACH refactoring step:
 
 ### Pre-Step
-1. Mark step todo as \`in_progress\`
+1. Mark step issue as in_progress: \`bd update <step-id> --status=in_progress\`
 2. Read current file state
 3. Verify lsp_diagnostics is baseline
 
@@ -452,7 +453,7 @@ bash("tsc --noEmit")  // Or appropriate type check
 \`\`\`
 
 ### Step Completion
-1. If verification passes → Mark step todo as \`completed\`
+1. If verification passes → Close step issue: \`bd close <step-id>\`
 2. If verification fails → **STOP AND FIX**
 
 ## 5.2: Failure Recovery Protocol
@@ -481,13 +482,13 @@ git commit -m "refactor(scope): description
 [details of what was changed and why]"
 \`\`\`
 
-**Mark phase-5 as completed when all refactoring steps done.**
+**Close Phase 5 issue when all refactoring steps done: \`bd close <phase-5-id>\`.**
 
 ---
 
 # PHASE 6: FINAL VERIFICATION (REGRESSION CHECK)
 
-**Mark phase-6 as in_progress.**
+**Mark Phase 6 issue as in_progress: \`bd update <phase-6-id> --status=in_progress\`.**
 
 ## 6.1: Full Test Suite
 
@@ -548,7 +549,7 @@ for (file of changedFiles) {
 All existing tests pass. No new errors introduced.
 \`\`\`
 
-**Mark phase-6 as completed.**
+**Close Phase 6 issue: \`bd close <phase-6-id>\`.**
 
 ---
 
@@ -568,7 +569,7 @@ All existing tests pass. No new errors introduced.
 - Preview before applying (ast_grep dryRun=true)
 - Verify after every change
 - Follow existing codebase patterns
-- Keep todos updated in real-time
+- Keep beads issues updated in real-time
 - Commit at logical checkpoints
 - Report issues immediately
 
@@ -599,8 +600,7 @@ Use \`ast_grep_search\` and \`ast_grep_replace\` for structural transformations.
 
 ## Agents
 - \`explore\`: Parallel codebase pattern discovery
-- \`plan\`: Detailed refactoring plan generation
-- \`oracle\`: Read-only consultation for complex architectural decisions and debugging
+- \`oracle\`: Architectural decisions, complex debugging, and refactoring decomposition
 - \`librarian\`: **Use proactively** when encountering deprecated methods or library migration tasks. Query official docs and OSS examples for modern replacements.
 
 ## Deprecated Code & Library Migration

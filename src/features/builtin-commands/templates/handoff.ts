@@ -26,15 +26,17 @@ If the session is nearly empty or has no meaningful context, inform the user the
 Execute these tools to gather concrete data:
 
 1. session_read({ session_id: "$SESSION_ID" }) — full session history
-2. todoread() — current task progress
-3. Bash({ command: "git diff --stat HEAD~10..HEAD" }) — recent file changes
-4. Bash({ command: "git status --porcelain" }) — uncommitted changes
+2. Bash({ command: "bd list --status=open --json" }) — current issue queue and progress
+3. Bash({ command: "bd list --status=in_progress --json" }) — active work items
+4. Bash({ command: "git diff --stat HEAD~10..HEAD" }) — recent file changes
+5. Bash({ command: "git status --porcelain" }) — uncommitted changes
 
 Suggested execution order:
 
 \`\`\`
 session_read({ session_id: "$SESSION_ID" })
-todoread()
+Bash({ command: "bd list --status=open --json" })
+Bash({ command: "bd list --status=in_progress --json" })
 Bash({ command: "git diff --stat HEAD~10..HEAD" })
 Bash({ command: "git status --porcelain" })
 \`\`\`
@@ -42,7 +44,7 @@ Bash({ command: "git status --porcelain" })
 Analyze the gathered outputs to understand:
 - What the user asked for (exact wording)
 - What work was completed
-- What tasks remain incomplete (include todo state)
+- What issues remain open or in-progress (include beads issue state)
 - What decisions were made
 - What files were modified or discussed (include git diff/stat + status)
 - What patterns, constraints, or preferences were established
@@ -104,7 +106,7 @@ PENDING TASKS
 - [Tasks that were planned but not completed]
 - [Next logical steps to take]
 - [Any blockers or issues encountered]
-- [Include current todo state from todoread()]
+- [Include open/in-progress beads issues from bd list]
 
 KEY FILES
 ---------

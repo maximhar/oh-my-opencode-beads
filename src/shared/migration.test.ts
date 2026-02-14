@@ -1018,11 +1018,11 @@ describe("migrateConfigFile with backup", () => {
     expect(agents.oracle.category).toBe("ultrabrain")
   })
 
-  test("does not write or create backups for experimental.task_system", () => {
-    //#given: Config with experimental.task_system enabled
+  test("does not write or create backups for experimental.aggressive_truncation", () => {
+    //#given: Config with unrelated experimental setting
     const testConfigPath = "/tmp/test-config-task-system.json"
     const rawConfig: Record<string, unknown> = {
-      experimental: { task_system: true },
+      experimental: { aggressive_truncation: true },
     }
 
     fs.writeFileSync(testConfigPath, globalThis.JSON.stringify(rawConfig, null, 2))

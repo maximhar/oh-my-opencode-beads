@@ -11,7 +11,7 @@ const TASK_TOOLS = new Set([
 const TURN_THRESHOLD = 10
 const REMINDER_MESSAGE = `
 
-The task tools haven't been used recently. If you're tracking work, use task with action=create/update (or task_create/task_update) to record progress.`
+The beads tracking tools haven't been used recently. If you're tracking work, use \`bd ready\` to check available issues, \`bd close <id>\` to mark completed work, or \`bd create\` to file new issues.`
 
 interface ToolExecuteInput {
   tool: string

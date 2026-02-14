@@ -1,6 +1,7 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 
 import type { BackgroundManager } from "../../features/background-agent"
+import { readActiveWorkState } from "../../features/boulder-state"
 import {
   findNearestMessageWithFields,
   type ToolPermission,
@@ -32,6 +33,7 @@ export async function injectContinuation(args: {
   backgroundManager?: BackgroundManager
   skipAgents?: string[]
   resolvedInfo?: ResolvedMessageInfo
+  workItemLabel?: string
   sessionStateStore: SessionStateStore
 }): Promise<void> {
   const {
@@ -40,6 +42,7 @@ export async function injectContinuation(args: {
     backgroundManager,
     skipAgents = DEFAULT_SKIP_AGENTS,
     resolvedInfo,
+    workItemLabel,
     sessionStateStore,
   } = args
 
@@ -58,19 +61,41 @@ export async function injectContinuation(args: {
     return
   }
 
-  let todos: Todo[] = []
-  try {
-    const response = await ctx.client.session.todo({ path: { id: sessionID } })
-    todos = (response.data ?? response) as Todo[]
-  } catch (error) {
-    log(`[${HOOK_NAME}] Failed to fetch todos`, { sessionID, error: String(error) })
-    return
-  }
+  const activeWorkState = readActiveWorkState(ctx.directory)
+  const activeWorkLabel =
+    workItemLabel ??
+    (activeWorkState?.session_ids?.includes(sessionID)
+      ? (activeWorkState.active_issue_title ?? activeWorkState.active_issue_id ?? undefined)
+      : undefined)
 
-  const freshIncompleteCount = getIncompleteCount(todos)
-  if (freshIncompleteCount === 0) {
-    log(`[${HOOK_NAME}] Skipped injection: no incomplete todos`, { sessionID })
-    return
+  let freshIncompleteCount = 0
+  let totalCount = 0
+  let remainingSection = ""
+
+  if (activeWorkLabel) {
+    freshIncompleteCount = 1
+    totalCount = 1
+    remainingSection = `Remaining work:\n- ${activeWorkLabel}`
+  } else {
+    let todos: Todo[] = []
+    try {
+      const response = await ctx.client.session.todo({ path: { id: sessionID } })
+      todos = (response.data ?? response) as Todo[]
+    } catch (error) {
+      log(`[${HOOK_NAME}] Failed to fetch todos`, { sessionID, error: String(error) })
+      return
+    }
+
+    freshIncompleteCount = getIncompleteCount(todos)
+    if (freshIncompleteCount === 0) {
+      log(`[${HOOK_NAME}] Skipped injection: no incomplete work`, { sessionID })
+      return
+    }
+
+    totalCount = todos.length
+    const incompleteTodos = todos.filter((todo) => todo.status !== "completed" && todo.status !== "cancelled")
+    const todoList = incompleteTodos.map((todo) => `- [${todo.status}] ${todo.content}`).join("\n")
+    remainingSection = `Remaining work:\n${todoList}`
   }
 
   let agentName = resolvedInfo?.agent
@@ -105,14 +130,11 @@ export async function injectContinuation(args: {
     return
   }
 
-  const incompleteTodos = todos.filter((todo) => todo.status !== "completed" && todo.status !== "cancelled")
-  const todoList = incompleteTodos.map((todo) => `- [${todo.status}] ${todo.content}`).join("\n")
   const prompt = `${CONTINUATION_PROMPT}
 
-[Status: ${todos.length - freshIncompleteCount}/${todos.length} completed, ${freshIncompleteCount} remaining]
+[Status: ${totalCount - freshIncompleteCount}/${totalCount} completed, ${freshIncompleteCount} remaining]
 
-Remaining tasks:
-${todoList}`
+${remainingSection}`
 
   const injectionState = sessionStateStore.getExistingState(sessionID)
   if (injectionState) {

@@ -8,9 +8,6 @@
     "$schema": {
       "type": "string"
     },
-    "new_task_system_enabled": {
-      "type": "boolean"
-    },
     "default_run_agent": {
       "type": "string"
     },
@@ -2955,9 +2952,6 @@
             "protected_tools"
           ],
           "additionalProperties": false
-        },
-        "task_system": {
-          "type": "boolean"
         },
         "plugin_load_timeout_ms": {
           "type": "number",

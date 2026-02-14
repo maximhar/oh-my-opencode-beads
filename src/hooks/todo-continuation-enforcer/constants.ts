@@ -4,13 +4,13 @@ export const HOOK_NAME = "todo-continuation-enforcer"
 
 export const DEFAULT_SKIP_AGENTS = ["prometheus", "compaction"]
 
-export const CONTINUATION_PROMPT = `${createSystemDirective(SystemDirectiveTypes.TODO_CONTINUATION)}
+export const CONTINUATION_PROMPT = `${createSystemDirective(SystemDirectiveTypes.WORK_CONTINUATION)}
 
-Incomplete tasks remain in your todo list. Continue working on the next pending task.
+Incomplete work remains in your active issue queue. Continue working on the next ready issue.
 
 - Proceed without asking for permission
-- Mark each task complete when finished
-- Do not stop until all tasks are done`
+- Mark each issue complete when finished (\`bd close <id>\`)
+- Do not stop until active work is done`
 
 export const COUNTDOWN_SECONDS = 2
 export const TOAST_DURATION_MS = 900

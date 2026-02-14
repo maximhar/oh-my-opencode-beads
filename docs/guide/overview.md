@@ -10,7 +10,7 @@ Learn about Oh My OpenCode, a plugin that transforms OpenCode into the best agen
 
 **Feeling lazy?** Just include `ultrawork` (or `ulw`) in your prompt. That's it. The agent figures out the rest.
 
-**Need precision?** Press **Tab** to enter Prometheus (Planner) mode, create a work plan through an interview process, then run `/start-work` to execute it with full orchestration.
+**Need precision?** Press **Tab** to enter Prometheus (Planner) mode, create a work plan through an interview process, then execute via beads-driven workflow (`bd ready` → `bd update --status in_progress` → `bd close`).
 
 ---
 
@@ -54,11 +54,12 @@ For complex or critical tasks, press **Tab** to switch to Prometheus (Planner) m
 
 2. **Plan generation** - Based on the interview, Prometheus generates a detailed work plan with tasks, acceptance criteria, and guardrails. Optionally reviewed by Momus (plan reviewer) for high-accuracy validation.
 
-3. **Run `/start-work`** - The Atlas takes over:
-   - Distributes tasks to specialized sub-agents
-   - Verifies each task completion independently
-   - Accumulates learnings across tasks
-   - Tracks progress across sessions (resume anytime)
+3. **Execute via beads** - Work is decomposed into trackable issues:
+   - `bd ready` shows issues with no blockers
+   - `bd update <id> --status in_progress` claims an issue
+   - Agent implements the work, delegating to specialized sub-agents
+   - `bd close <id>` marks complete and unblocks dependents
+   - Tracks progress across sessions (resume anytime with `bd ready`)
 
 **When to use Prometheus:**
 - Multi-day or multi-session projects
@@ -70,21 +71,21 @@ For complex or critical tasks, press **Tab** to switch to Prometheus (Planner) m
 
 ## Critical Usage Guidelines
 
-### Always Use Prometheus + Orchestrator Together
+### Always Use Prometheus + Beads Execution Together
 
-**Do NOT use `atlas` without `/start-work`.**
+**Do NOT skip issue decomposition after planning.**
 
-The orchestrator is designed to execute work plans created by Prometheus. Using it directly without a plan leads to unpredictable behavior.
+The orchestration system works best when Prometheus plans are decomposed into beads issues with dependencies. This ensures trackable, resumable execution.
 
 **Correct workflow:**
 ```
 1. Press Tab → Enter Prometheus mode
 2. Describe work → Prometheus interviews you
-3. Confirm plan → Review .sisyphus/plans/*.md
-4. Run /start-work → Orchestrator executes
+3. Confirm plan → Issues created via bd create with dependencies
+4. Execute → bd ready to find work, bd close when done
 ```
 
-**Prometheus and Atlas are a pair. Always use them together.**
+**Prometheus creates the plan. Beads tracks the execution.**
 
 ---
 

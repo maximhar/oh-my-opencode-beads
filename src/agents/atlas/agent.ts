@@ -1,7 +1,7 @@
 /**
  * Atlas - Master Orchestrator Agent
  *
- * Orchestrates work via task() to complete ALL tasks in a todo list until fully done.
+ * Orchestrates work via task() to complete ALL beads issues until fully done.
  * You are the conductor of a symphony of specialized agents.
  *
  * Routing:
@@ -100,7 +100,7 @@ export function createAtlasAgent(ctx: OrchestratorContext): AgentConfig {
 
   const baseConfig = {
     description:
-      "Orchestrates work via task() to complete ALL tasks in a todo list until fully done. (Atlas - OhMyOpenCode)",
+      "Orchestrates work via task() to complete ALL beads issues until fully done. (Atlas - OhMyOpenCode)",
     mode: MODE,
     ...(ctx.model ? { model: ctx.model } : {}),
     temperature: 0.1,
@@ -119,8 +119,8 @@ export const atlasPromptMetadata: AgentPromptMetadata = {
   promptAlias: "Atlas",
   triggers: [
     {
-      domain: "Todo list orchestration",
-      trigger: "Complete ALL tasks in a todo list with verification",
+      domain: "Beads issue orchestration",
+      trigger: "Complete ALL beads issues in the issue graph with verification",
     },
     {
       domain: "Multi-agent coordination",
@@ -128,7 +128,7 @@ export const atlasPromptMetadata: AgentPromptMetadata = {
     },
   ],
   useWhen: [
-    "User provides a todo list path (.sisyphus/plans/{name}.md)",
+    "User provides beads issues to execute",
     "Multiple tasks need to be completed in sequence or parallel",
     "Work requires coordination across multiple specialized agents",
   ],
@@ -138,5 +138,5 @@ export const atlasPromptMetadata: AgentPromptMetadata = {
     "When user wants to execute tasks manually",
   ],
   keyTrigger:
-    "Todo list path provided OR multiple tasks requiring multi-agent orchestration",
+    "Beads issues provided OR multiple beads issues requiring multi-agent orchestration",
 }

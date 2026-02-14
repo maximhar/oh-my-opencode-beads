@@ -51,6 +51,40 @@ describe("createBuiltinAgents with model overrides", () => {
     expect(agents.sisyphus.thinking).toBeUndefined()
   })
 
+  test("Sisyphus with GPT model override uses GPT-optimized prompt scaffold", async () => {
+    // #given
+    const overrides = {
+      sisyphus: { model: "github-copilot/gpt-5.3-codex" },
+    }
+
+    // #when
+    const agents = await createBuiltinAgents([], overrides, undefined, TEST_DEFAULT_MODEL, undefined, undefined, [], undefined, undefined)
+
+    // #then
+    expect(agents.sisyphus.prompt).toContain("<output_verbosity_spec>")
+    expect(agents.sisyphus.prompt).toContain("<scope_and_design_constraints>")
+    expect(agents.sisyphus.prompt).toContain("<tool_usage_rules>")
+    expect(agents.sisyphus.prompt).toContain("bd create")
+  })
+
+  test("Sisyphus default model does not use GPT-only scaffold", async () => {
+    // #given
+    const fetchSpy = spyOn(shared, "fetchAvailableModels").mockResolvedValue(
+      new Set(["anthropic/claude-opus-4-6"])
+    )
+
+    try {
+      // #when
+      const agents = await createBuiltinAgents([], {}, undefined, TEST_DEFAULT_MODEL, undefined, undefined, [], undefined, undefined)
+
+      // #then
+      expect(agents.sisyphus.prompt).not.toContain("<output_verbosity_spec>")
+      expect(agents.sisyphus.prompt).not.toContain("<scope_and_design_constraints>")
+    } finally {
+      fetchSpy.mockRestore()
+    }
+  })
+
   test("Atlas uses uiSelectedModel when provided", async () => {
     // #given
     const fetchSpy = spyOn(shared, "fetchAvailableModels").mockResolvedValue(

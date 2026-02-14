@@ -946,10 +946,10 @@ describe("config-handler plugin loading error boundary (#1559)", () => {
   })
 })
 
-describe("per-agent todowrite/todoread deny when task_system enabled", () => {
+describe("per-agent todowrite/todoread deny for primary agents", () => {
   const PRIMARY_AGENTS = ["sisyphus", "hephaestus", "atlas", "prometheus", "sisyphus-junior"]
 
-  test("denies todowrite and todoread for primary agents when task_system is enabled", async () => {
+  test("denies todowrite and todoread for primary agents by default", async () => {
     //#given
     const createBuiltinAgentsMock = agents.createBuiltinAgents as unknown as {
       mockResolvedValue: (value: Record<string, unknown>) => void
@@ -963,9 +963,7 @@ describe("per-agent todowrite/todoread deny when task_system enabled", () => {
       oracle: { name: "oracle", prompt: "test", mode: "subagent" },
     })
 
-    const pluginConfig: OhMyOpenCodeConfig = {
-      experimental: { task_system: true },
-    }
+    const pluginConfig: OhMyOpenCodeConfig = {}
     const config: Record<string, unknown> = {
       model: "anthropic/claude-opus-4-6",
       agent: {},
@@ -990,7 +988,7 @@ describe("per-agent todowrite/todoread deny when task_system enabled", () => {
     }
   })
 
-  test("does not deny todowrite/todoread when task_system is disabled", async () => {
+  test("still denies todowrite/todoread when other experimental flags are set", async () => {
     //#given
     const createBuiltinAgentsMock = agents.createBuiltinAgents as unknown as {
       mockResolvedValue: (value: Record<string, unknown>) => void
@@ -1001,7 +999,7 @@ describe("per-agent todowrite/todoread deny when task_system enabled", () => {
     })
 
     const pluginConfig: OhMyOpenCodeConfig = {
-      experimental: { task_system: false },
+      experimental: { aggressive_truncation: true },
     }
     const config: Record<string, unknown> = {
       model: "anthropic/claude-opus-4-6",
@@ -1021,16 +1019,17 @@ describe("per-agent todowrite/todoread deny when task_system enabled", () => {
 
     //#then
     const agentResult = config.agent as Record<string, { permission?: Record<string, unknown> }>
-    expect(agentResult.sisyphus?.permission?.todowrite).toBeUndefined()
-    expect(agentResult.sisyphus?.permission?.todoread).toBeUndefined()
-    expect(agentResult.hephaestus?.permission?.todowrite).toBeUndefined()
-    expect(agentResult.hephaestus?.permission?.todoread).toBeUndefined()
+    expect(agentResult.sisyphus?.permission?.todowrite).toBe("deny")
+    expect(agentResult.sisyphus?.permission?.todoread).toBe("deny")
+    expect(agentResult.hephaestus?.permission?.todowrite).toBe("deny")
+    expect(agentResult.hephaestus?.permission?.todoread).toBe("deny")
   })
 
-  test("does not deny todowrite/todoread when task_system is undefined", async () => {
+  test("does not pass a task-system toggle to createBuiltinAgents", async () => {
     //#given
     const createBuiltinAgentsMock = agents.createBuiltinAgents as unknown as {
       mockResolvedValue: (value: Record<string, unknown>) => void
+      mock: { calls: unknown[][] }
     }
     createBuiltinAgentsMock.mockResolvedValue({
       sisyphus: { name: "sisyphus", prompt: "test", mode: "primary" },
@@ -1054,8 +1053,8 @@ describe("per-agent todowrite/todoread deny when task_system enabled", () => {
     await handler(config)
 
     //#then
-    const agentResult = config.agent as Record<string, { permission?: Record<string, unknown> }>
-    expect(agentResult.sisyphus?.permission?.todowrite).toBeUndefined()
-    expect(agentResult.sisyphus?.permission?.todoread).toBeUndefined()
+    const firstCall = createBuiltinAgentsMock.mock.calls[0]
+    expect(firstCall).toBeDefined()
+    expect(firstCall).toHaveLength(11)
   })
 })

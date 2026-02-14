@@ -1,5 +1,11 @@
 import type { PluginInput } from "@opencode-ai/plugin"
-import { appendSessionId, getPlanProgress, readBoulderState } from "../../features/boulder-state"
+import {
+  appendActiveWorkSessionId,
+  appendSessionId,
+  getPlanProgress,
+  readActiveWorkState,
+  readBoulderState,
+} from "../../features/boulder-state"
 import { log } from "../../shared/logger"
 import { isCallerOrchestrator } from "../../shared/session-utils"
 import { collectGitDiffStats, formatFileChanges } from "../../shared/git-worktree"
@@ -61,13 +67,46 @@ export function createToolExecuteAfterHandler(input: {
       const fileChanges = formatFileChanges(gitStats)
       const subagentSessionId = extractSessionIdFromOutput(toolOutput.output)
 
-      const boulderState = readBoulderState(ctx.directory)
-      if (boulderState) {
-        const progress = getPlanProgress(boulderState.active_plan)
+      const activeWorkState = readActiveWorkState(ctx.directory)
+      if (activeWorkState) {
+        if (toolInput.sessionID && !activeWorkState.session_ids?.includes(toolInput.sessionID)) {
+          appendActiveWorkSessionId(ctx.directory, toolInput.sessionID)
+          log(`[${HOOK_NAME}] Appended session to active work`, {
+            sessionID: toolInput.sessionID,
+            issueID: activeWorkState.active_issue_id,
+          })
+        }
 
-        if (toolInput.sessionID && !boulderState.session_ids?.includes(toolInput.sessionID)) {
+        const workItemLabel = activeWorkState.active_issue_title ?? activeWorkState.active_issue_id ?? "active-work"
+        const originalResponse = toolOutput.output
+
+        toolOutput.output = `
+## SUBAGENT WORK COMPLETED
+
+${fileChanges}
+
+---
+
+**Subagent Response:**
+
+${originalResponse}
+
+<system-reminder>
+${buildOrchestratorReminder(workItemLabel, subagentSessionId)}
+</system-reminder>`
+
+        log(`[${HOOK_NAME}] Output transformed for orchestrator mode (active work)`, {
+          workItemLabel,
+          fileCount: gitStats.length,
+        })
+      } else {
+        const boulderState = readBoulderState(ctx.directory)
+        if (boulderState) {
+          const progress = getPlanProgress(boulderState.active_plan)
+
+          if (toolInput.sessionID && !boulderState.session_ids?.includes(toolInput.sessionID)) {
           appendSessionId(ctx.directory, toolInput.sessionID)
-          log(`[${HOOK_NAME}] Appended session to boulder`, {
+          log(`[${HOOK_NAME}] Appended session to work plan`, {
             sessionID: toolInput.sessionID,
             plan: boulderState.plan_name,
           })
@@ -88,21 +127,22 @@ ${fileChanges}
 ${originalResponse}
 
 <system-reminder>
-${buildOrchestratorReminder(boulderState.plan_name, progress, subagentSessionId)}
+${buildOrchestratorReminder(boulderState.plan_name, subagentSessionId, progress)}
 </system-reminder>`
 
-        log(`[${HOOK_NAME}] Output transformed for orchestrator mode (boulder)`, {
+        log(`[${HOOK_NAME}] Output transformed for orchestrator mode (work plan)`, {
           plan: boulderState.plan_name,
           progress: `${progress.completed}/${progress.total}`,
           fileCount: gitStats.length,
         })
-      } else {
-        toolOutput.output += `\n<system-reminder>\n${buildStandaloneVerificationReminder(subagentSessionId)}\n</system-reminder>`
+        } else {
+          toolOutput.output += `\n<system-reminder>\n${buildStandaloneVerificationReminder(subagentSessionId)}\n</system-reminder>`
 
-        log(`[${HOOK_NAME}] Verification reminder appended for orchestrator`, {
-          sessionID: toolInput.sessionID,
-          fileCount: gitStats.length,
-        })
+          log(`[${HOOK_NAME}] Verification reminder appended for orchestrator`, {
+            sessionID: toolInput.sessionID,
+            fileCount: gitStats.length,
+          })
+        }
       }
     }
   }

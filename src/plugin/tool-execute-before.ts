@@ -1,7 +1,7 @@
 import type { PluginContext } from "./types"
 
 import { getMainSessionID } from "../features/claude-code-session-state"
-import { clearBoulderState } from "../features/boulder-state"
+import { clearActiveWorkState, clearBoulderState } from "../features/boulder-state"
 import { log } from "../shared"
 import { resolveSessionAgent } from "./session-agent-resolver"
 
@@ -95,6 +95,7 @@ export function createToolExecuteBeforeHandler(args: {
         hooks.todoContinuationEnforcer?.cancelAllCountdowns()
         hooks.ralphLoop?.cancelLoop(sessionID)
         clearBoulderState(ctx.directory)
+        clearActiveWorkState(ctx.directory)
         log("[stop-continuation] All continuation mechanisms stopped", {
           sessionID,
         })

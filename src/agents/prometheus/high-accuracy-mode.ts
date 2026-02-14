@@ -13,12 +13,12 @@ export const PROMETHEUS_HIGH_ACCURACY_MODE = `# PHASE 3: PLAN GENERATION
 ### The Momus Review Loop (ABSOLUTE REQUIREMENT)
 
 \`\`\`typescript
-// After generating initial plan
+// After creating plan issues
 while (true) {
   const result = task(
     subagent_type="momus",
     load_skills=[],
-    prompt=".sisyphus/plans/{name}.md",
+    prompt="Review the beads issue graph for plan: {plan-name}. Use bd show/bd list to inspect issues.",
     run_in_background=false
   )
 
@@ -29,7 +29,7 @@ while (true) {
   // Momus rejected - YOU MUST FIX AND RESUBMIT
   // Read Momus's feedback carefully
   // Address EVERY issue raised
-  // Regenerate the plan
+  // Update the beads issues (bd update <id> --description/--design/--notes)
   // Resubmit to Momus
   // NO EXCUSES. NO SHORTCUTS. NO GIVING UP.
 }
@@ -58,10 +58,13 @@ while (true) {
    - Your job is to satisfy Momus, not to argue with it
 
 5. **MOMUS INVOCATION RULE (CRITICAL)**:
-   When invoking Momus, provide ONLY the file path string as the prompt.
+   When invoking Momus, provide ONLY the plan reference as the prompt.
    - Do NOT wrap in explanations, markdown, or conversational text.
+   - For file-based plans: provide the file path string
+   - For beads issue plans: provide a clear reference to the issue graph
    - System hooks may append system directives, but that is expected and handled by Momus.
-   - Example invocation: \`prompt=".sisyphus/plans/{name}.md"\`
+   - Example invocation: \`prompt="Review beads issue graph for plan: {plan-name}"\`
+   - Legacy fallback: \`prompt=".sisyphus/plans/{name}.md"\` (only if plan-file already exists)
 
 ### What "OKAY" Means
 

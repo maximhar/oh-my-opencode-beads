@@ -16,7 +16,6 @@ export type CreateToolsResult = {
   availableCategories: AvailableCategory[]
   browserProvider: BrowserAutomationProvider
   disabledSkills: Set<string>
-  taskSystemEnabled: boolean
 }
 
 export async function createTools(args: {
@@ -33,7 +32,7 @@ export async function createTools(args: {
 
   const availableCategories = createAvailableCategories(pluginConfig)
 
-  const { filteredTools, taskSystemEnabled } = createToolRegistry({
+  const { filteredTools } = createToolRegistry({
     ctx,
     pluginConfig,
     managers,
@@ -48,6 +47,5 @@ export async function createTools(args: {
     availableCategories,
     browserProvider: skillContext.browserProvider,
     disabledSkills: skillContext.disabledSkills,
-    taskSystemEnabled,
   }
 }

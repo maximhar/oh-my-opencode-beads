@@ -119,9 +119,9 @@ Given the same inputs:
 ### Continuous
 
 Work should survive interruptions:
-- Session crashes? Resume with `/start-work`
-- Need to step away? Progress is tracked
-- Multi-day project? Context is preserved
+- Session crashes? Resume with `bd ready` to see remaining work
+- Need to step away? Issue status persists in `.beads/`
+- Multi-day project? The beads issue graph preserves full context
 
 The agent maintains state. You don't have to.
 
@@ -154,7 +154,7 @@ Everything in Oh My OpenCode is designed to make this loop work:
 | Metis | Catch ambiguities before they become bugs |
 | Momus | Verify plans are complete before execution |
 | Orchestrator | Coordinate work without human micromanagement |
-| Todo Continuation | Force completion, prevent "I'm done" lies |
+| Beads Issue Graph | Track work, dependencies, and cross-session continuity |
 | Category System | Route to optimal model without human decision |
 | Background Agents | Parallel research without blocking user |
 | Wisdom Accumulation | Learn from work, don't repeat mistakes |

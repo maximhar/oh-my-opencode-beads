@@ -465,14 +465,14 @@ EXECUTION_PLAN:
 ## PHASE 5: Commit Execution
 
 <execution>
-### 5.1 Register TODO Items
+### 5.1 Register Commit Tasks
 
-Use TodoWrite to register each commit as a trackable item:
-\`\`\`
-- [ ] Fixup: <description> -> <target-hash>
-- [ ] New: <description>
-- [ ] Rebase autosquash
-- [ ] Final verification
+Use \`bd create\` via bash to register each commit as a trackable issue:
+\`\`\`bash
+bd create --title="Fixup: <description> -> <target-hash>" --type=task --priority=2
+bd create --title="New commit: <description>" --type=task --priority=2
+bd create --title="Rebase autosquash" --type=task --priority=2
+bd create --title="Final verification" --type=task --priority=2
 \`\`\`
 
 ### 5.2 Fixup Commits (If Any)

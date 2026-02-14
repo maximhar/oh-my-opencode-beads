@@ -2,16 +2,16 @@ import type { PluginInput } from "@opencode-ai/plugin"
 import type { BackgroundManager } from "../../features/background-agent"
 import { log } from "../../shared/logger"
 import { HOOK_NAME } from "./hook-name"
-import { BOULDER_CONTINUATION_PROMPT } from "./system-reminder-templates"
+import { WORK_CONTINUATION_PROMPT } from "./system-reminder-templates"
 import { resolveRecentModelForSession } from "./recent-model-resolver"
 import type { SessionState } from "./types"
 
-export async function injectBoulderContinuation(input: {
+export async function injectWorkContinuation(input: {
   ctx: PluginInput
   sessionID: string
-  planName: string
-  remaining: number
-  total: number
+  workItemLabel: string
+  remaining?: number
+  total?: number
   agent?: string
   backgroundManager?: BackgroundManager
   sessionState: SessionState
@@ -19,7 +19,7 @@ export async function injectBoulderContinuation(input: {
   const {
     ctx,
     sessionID,
-    planName,
+    workItemLabel,
     remaining,
     total,
     agent,
@@ -36,12 +36,16 @@ export async function injectBoulderContinuation(input: {
     return
   }
 
+  const statusLine =
+    total !== undefined && remaining !== undefined
+      ? `\n\n[Status: ${total - remaining}/${total} completed, ${remaining} remaining]`
+      : ""
+
   const prompt =
-    BOULDER_CONTINUATION_PROMPT.replace(/{PLAN_NAME}/g, planName) +
-    `\n\n[Status: ${total - remaining}/${total} completed, ${remaining} remaining]`
+    WORK_CONTINUATION_PROMPT.replace(/{WORK_ITEM}/g, workItemLabel) + statusLine
 
   try {
-    log(`[${HOOK_NAME}] Injecting boulder continuation`, { sessionID, planName, remaining })
+    log(`[${HOOK_NAME}] Injecting work continuation`, { sessionID, workItemLabel, remaining })
 
     const model = await resolveRecentModelForSession(ctx, sessionID)
 
@@ -56,10 +60,10 @@ export async function injectBoulderContinuation(input: {
     })
 
     sessionState.promptFailureCount = 0
-    log(`[${HOOK_NAME}] Boulder continuation injected`, { sessionID })
+    log(`[${HOOK_NAME}] Work continuation injected`, { sessionID })
   } catch (err) {
     sessionState.promptFailureCount += 1
-    log(`[${HOOK_NAME}] Boulder continuation failed`, {
+    log(`[${HOOK_NAME}] Work continuation failed`, {
       sessionID,
       error: String(err),
       promptFailureCount: sessionState.promptFailureCount,

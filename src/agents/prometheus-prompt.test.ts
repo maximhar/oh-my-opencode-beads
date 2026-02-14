@@ -2,12 +2,12 @@ import { describe, test, expect } from "bun:test"
 import { PROMETHEUS_SYSTEM_PROMPT } from "./prometheus"
 
 describe("PROMETHEUS_SYSTEM_PROMPT Momus invocation policy", () => {
-  test("should direct providing ONLY the file path string when invoking Momus", () => {
+  test("should direct providing ONLY the plan reference when invoking Momus", () => {
     //#given
     const prompt = PROMETHEUS_SYSTEM_PROMPT
 
     //#when / #then
-    expect(prompt.toLowerCase()).toMatch(/momus.*only.*path|path.*only.*momus/)
+    expect(prompt.toLowerCase()).toMatch(/momus.*only.*plan reference|momus.*only.*path|path.*only.*momus/)
   })
 
   test("should forbid wrapping Momus invocation in explanations or markdown", () => {

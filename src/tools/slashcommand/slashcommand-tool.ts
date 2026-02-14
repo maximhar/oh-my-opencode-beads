@@ -51,7 +51,7 @@ export function createSlashcommandTool(options: SlashcommandToolOptions = {}): T
       command: tool.schema
         .string()
         .describe(
-          "The slash command name (without leading slash). E.g., 'publish', 'commit', 'plan'"
+          "The slash command name (without leading slash). E.g., 'publish', 'commit', 'start-work'"
         ),
       user_message: tool.schema
         .string()

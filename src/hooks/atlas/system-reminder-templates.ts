@@ -16,8 +16,8 @@ As an orchestrator, you should:
 - **COORDINATE** multiple tasks and ensure completion
 
 You should NOT:
-- Write code directly (except for \`.sisyphus/\` files like plans and notepads)
-- Make direct file edits outside \`.sisyphus/\`
+- Write code directly
+- Make direct file edits unless strictly required for verification follow-up
 - Implement features yourself
 
 **If you need to make changes:**
@@ -28,17 +28,18 @@ You should NOT:
 ---
 `
 
-export const BOULDER_CONTINUATION_PROMPT = `${createSystemDirective(SystemDirectiveTypes.BOULDER_CONTINUATION)}
+export const WORK_CONTINUATION_PROMPT = `${createSystemDirective(SystemDirectiveTypes.WORK_CONTINUATION)}
 
-You have an active work plan with incomplete tasks. Continue working.
+You have an active work item with incomplete tasks. Continue working.
 
 RULES:
-- **FIRST**: Read the plan file NOW to check exact current progress — count remaining \`- [ ]\` tasks
+- **FIRST**: Run \`bd list --status=in_progress\`, \`bd ready\`, and \`bd blocked\` to verify exact current state
 - Proceed without asking for permission
-- Change \`- [ ]\` to \`- [x]\` in the plan file when done
-- Use the notepad at .sisyphus/notepads/{PLAN_NAME}/ to record learnings
-- Do not stop until all tasks are complete
-- If blocked, document the blocker and move to the next task`
+- Close completed issue immediately with \`bd close <id>\`
+- If follow-up work is needed, create and claim it with \`bd create ...\` then \`bd update <id> --status=in_progress\`
+- Use the notepad at .sisyphus/notepads/{WORK_ITEM}/ to record learnings
+- Do not stop until all active work is resolved
+- If blocked, document blocker details using \`bd update <id> --status=blocked\` and move to the next ready issue`
 
 export const VERIFICATION_REMINDER = `**MANDATORY: WHAT YOU MUST DO RIGHT NOW**
 
@@ -88,12 +89,11 @@ For EACH changed file, verify:
 
 Static analysis CANNOT catch: visual bugs, animation issues, user flow breakages.
 
-**STEP 4: IF QA IS NEEDED - ADD TO TODO IMMEDIATELY**
+**STEP 4: IF QA IS NEEDED - CREATE ISSUE IMMEDIATELY**
 
 \`\`\`
-todowrite([
-  { id: "qa-X", content: "HANDS-ON QA: [specific verification action]", status: "pending", priority: "high" }
-])
+bd create --title="HANDS-ON QA: [specific verification action]" --type=task --priority=1
+bd update <id> --status=in_progress
 \`\`\`
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -123,7 +123,7 @@ As an ORCHESTRATOR, you MUST:
 3. **COORDINATE** - you orchestrate, you don't implement
 
 **ALLOWED direct file operations:**
-- Files inside \`.sisyphus/\` (plans, notepads, drafts)
+- Operational metadata files inside \`.sisyphus/\`
 - Reading files for verification
 - Running diagnostics/tests
 

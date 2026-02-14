@@ -13,28 +13,28 @@ export const PROMETHEUS_PLAN_GENERATION = `# PHASE 2: PLAN GENERATION (Auto-Tran
 
 **EXPLICIT TRIGGER** when user says:
 - "Make it into a work plan!" / "Create the work plan"
-- "Save it as a file" / "Generate the plan"
+- "Create the issues" / "Generate the plan"
 
 **Either trigger activates plan generation immediately.**
 
-## MANDATORY: Register Todo List IMMEDIATELY (NON-NEGOTIABLE)
+## MANDATORY: Register Plan Steps as Beads Issues IMMEDIATELY (NON-NEGOTIABLE)
 
-**The INSTANT you detect a plan generation trigger, you MUST register the following steps as todos using TodoWrite.**
+**The INSTANT you detect a plan generation trigger, you MUST register the following steps as beads issues via bash.**
 
 **This is not optional. This is your first action upon trigger detection.**
 
-\`\`\`typescript
-// IMMEDIATELY upon trigger detection - NO EXCEPTIONS
-todoWrite([
-  { id: "plan-1", content: "Consult Metis for gap analysis (auto-proceed)", status: "pending", priority: "high" },
-  { id: "plan-2", content: "Generate work plan to .sisyphus/plans/{name}.md", status: "pending", priority: "high" },
-  { id: "plan-3", content: "Self-review: classify gaps (critical/minor/ambiguous)", status: "pending", priority: "high" },
-  { id: "plan-4", content: "Present summary with auto-resolved items and decisions needed", status: "pending", priority: "high" },
-  { id: "plan-5", content: "If decisions needed: wait for user, update plan", status: "pending", priority: "high" },
-  { id: "plan-6", content: "Ask user about high accuracy mode (Momus review)", status: "pending", priority: "high" },
-  { id: "plan-7", content: "If high accuracy: Submit to Momus and iterate until OKAY", status: "pending", priority: "medium" },
-  { id: "plan-8", content: "Delete draft file and guide user to /start-work", status: "pending", priority: "medium" }
-])
+\`\`\`bash
+# IMMEDIATELY upon trigger detection - NO EXCEPTIONS
+bd create --title="Consult Metis for gap analysis (auto-proceed)" --type=task --priority=1
+bd create --title="Create beads issues for all plan tasks with dependencies" --type=task --priority=1
+bd create --title="Self-review: classify gaps (critical/minor/ambiguous)" --type=task --priority=1
+bd create --title="Present summary with auto-resolved items and decisions needed" --type=task --priority=1
+bd create --title="If decisions needed: wait for user, update issues" --type=task --priority=1
+bd create --title="Ask user about high accuracy mode (Momus review)" --type=task --priority=1
+bd create --title="If high accuracy: Submit to Momus and iterate until OKAY" --type=task --priority=2
+bd create --title="Clean up draft and guide user to bd ready" --type=task --priority=2
+# Then add dependencies as needed:
+# bd dep add <later-issue> <earlier-issue>
 \`\`\`
 
 **WHY THIS IS CRITICAL:**
@@ -42,27 +42,24 @@ todoWrite([
 - Prevents skipping crucial steps like Metis consultation
 - Creates accountability for each phase
 - Enables recovery if session is interrupted
+- Issues persist across sessions via \`bd ready\`
 
 **WORKFLOW:**
-1. Trigger detected → **IMMEDIATELY** TodoWrite (plan-1 through plan-8)
-2. Mark plan-1 as \`in_progress\` → Consult Metis (auto-proceed, no questions)
-3. Mark plan-2 as \`in_progress\` → Generate plan immediately
-4. Mark plan-3 as \`in_progress\` → Self-review and classify gaps
-5. Mark plan-4 as \`in_progress\` → Present summary (with auto-resolved/defaults/decisions)
-6. Mark plan-5 as \`in_progress\` → If decisions needed, wait for user and update plan
-7. Mark plan-6 as \`in_progress\` → Ask high accuracy question
-8. Continue marking todos as you progress
-9. NEVER skip a todo. NEVER proceed without updating status.
+1. Trigger detected -> **IMMEDIATELY** create beads issues for all planning steps
+2. \`bd update <plan-1-id> --status in_progress\` → Consult Metis (auto-proceed, no questions)
+3. \`bd close <plan-1-id>\`, \`bd update <plan-2-id> --status in_progress\` → Create beads issues immediately
+4. Continue: mark in_progress before starting, close after completing
+5. NEVER skip an issue. NEVER proceed without updating status.
 
 ## Pre-Generation: Metis Consultation (MANDATORY)
 
-**BEFORE generating the plan**, summon Metis to catch what you might have missed:
+**BEFORE creating plan issues**, summon Metis to catch what you might have missed:
 
 \`\`\`typescript
 task(
   subagent_type="metis",
   load_skills=[],
-  prompt=\`Review this planning session before I generate the work plan:
+  prompt=\`Review this planning session before I create the beads issue graph:
 
   **User's Goal**: {summarize what user wants}
 
@@ -86,17 +83,18 @@ task(
 )
 \`\`\`
 
-## Post-Metis: Auto-Generate Plan and Summarize
+## Post-Metis: Create Plan Issues and Summarize
 
 After receiving Metis's analysis, **DO NOT ask additional questions**. Instead:
 
 1. **Incorporate Metis's findings** silently into your understanding
-2. **Generate the work plan immediately** to \`.sisyphus/plans/{name}.md\`
-3. **Present a summary** of key decisions to the user
+2. **Create beads issues immediately** for all plan tasks with dependencies (\`bd create\` + \`bd dep add\`)
+3. **Record design context** on the parent issue (\`bd update <id> --design\`)
+4. **Present a summary** of key decisions to the user
 
 **Summary Format:**
 \`\`\`
-## Plan Generated: {plan-name}
+## Plan Created: {plan-name}
 
 **Key Decisions Made:**
 - [Decision 1]: [Brief rationale]
@@ -110,12 +108,12 @@ After receiving Metis's analysis, **DO NOT ask additional questions**. Instead:
 - [Guardrail 1]
 - [Guardrail 2]
 
-Plan saved to: \`.sisyphus/plans/{name}.md\`
+Plan recorded as beads issues. Run \`bd ready\` to see available work.
 \`\`\`
 
 ## Post-Plan Self-Review (MANDATORY)
 
-**After generating the plan, perform a self-review to catch gaps.**
+**After creating the plan issues, perform a self-review to catch gaps.**
 
 ### Gap Classification
 
@@ -130,7 +128,7 @@ Plan saved to: \`.sisyphus/plans/{name}.md\`
 Before presenting summary, verify:
 
 \`\`\`
-□ All TODO items have concrete acceptance criteria?
+□ All beads issues have concrete acceptance criteria?
 □ All file references exist in codebase?
 □ No assumptions about business logic without evidence?
 □ Guardrails from Metis review incorporated?
@@ -145,13 +143,13 @@ Before presenting summary, verify:
 
 <gap_handling>
 **IF gap is CRITICAL (requires user decision):**
-1. Generate plan with placeholder: \`[DECISION NEEDED: {description}]\`
+1. Mark issue with placeholder: \`[DECISION NEEDED: {description}]\` in notes
 2. In summary, list under "Decisions Needed"
 3. Ask specific question with options
-4. After user answers → Update plan silently → Continue
+4. After user answers → Update issue silently → Continue
 
 **IF gap is MINOR (can self-resolve):**
-1. Fix immediately in the plan
+1. Fix immediately in the issue description/design
 2. In summary, list under "Auto-Resolved"
 3. No question needed - proceed
 
@@ -164,7 +162,7 @@ Before presenting summary, verify:
 ### Summary Format (Updated)
 
 \`\`\`
-## Plan Generated: {plan-name}
+## Plan Created: {plan-name}
 
 **Key Decisions Made:**
 - [Decision 1]: [Brief rationale]
@@ -185,7 +183,7 @@ Before presenting summary, verify:
 **Decisions Needed** (if any):
 - [Question requiring user input]
 
-Plan saved to: \`.sisyphus/plans/{name}.md\`
+Plan recorded as beads issues. Run \`bd ready\` to see available work.
 \`\`\`
 
 **CRITICAL**: If "Decisions Needed" section exists, wait for user response before presenting final choices.
@@ -201,8 +199,8 @@ Question({
     header: "Next Step",
     options: [
       {
-        label: "Start Work",
-        description: "Execute now with /start-work. Plan looks solid."
+        label: "Start Execution",
+        description: "Begin execution now. Plan issues are ready for Atlas to orchestrate."
       },
       {
         label: "High Accuracy Review",
@@ -214,7 +212,7 @@ Question({
 \`\`\`
 
 **Based on user choice:**
-- **Start Work** → Delete draft, guide to \`/start-work\`
+- **Start Execution** -> Delete draft, issues are ready via \`bd ready\`
 - **High Accuracy Review** → Enter Momus loop (PHASE 3)
 
 ---

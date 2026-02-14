@@ -22,14 +22,12 @@ Generate hierarchical AGENTS.md files. Root + complexity-scored subdirectories.
 4. **Review** - Deduplicate, trim, validate
 
 <critical>
-**TodoWrite ALL phases. Mark in_progress → completed in real-time.**
+**Create beads issues for ALL phases. Update status in real-time with \`bd update\` / \`bd close\`.**
 \`\`\`
-TodoWrite([
-  { id: "discovery", content: "Fire explore agents + LSP codemap + read existing", status: "pending", priority: "high" },
-  { id: "scoring", content: "Score directories, determine locations", status: "pending", priority: "high" },
-  { id: "generate", content: "Generate AGENTS.md files (root + subdirs)", status: "pending", priority: "high" },
-  { id: "review", content: "Deduplicate, validate, trim", status: "pending", priority: "medium" }
-])
+bd create --title="Phase 1: Fire explore agents + LSP codemap + read existing" --type=task --priority=1
+bd create --title="Phase 2: Score directories, determine locations" --type=task --priority=1
+bd create --title="Phase 3: Generate AGENTS.md files (root + subdirs)" --type=task --priority=1
+bd create --title="Phase 4: Deduplicate, validate, trim" --type=task --priority=2
 \`\`\`
 </critical>
 
@@ -37,7 +35,7 @@ TodoWrite([
 
 ## Phase 1: Discovery + Analysis (Concurrent)
 
-**Mark "discovery" as in_progress.**
+**Mark Phase 1 issue as in_progress: \`bd update <phase-1-id> --status=in_progress\`.**
 
 ### Fire Background Explore Agents IMMEDIATELY
 
@@ -138,13 +136,13 @@ LspFindReferences(filePath="...", line=X, character=Y)
 for each task_id: background_output(task_id="...")
 \`\`\`
 
-**Merge: bash + LSP + existing + explore findings. Mark "discovery" as completed.**
+**Merge: bash + LSP + existing + explore findings. Close Phase 1 issue: \`bd close <phase-1-id>\`.**
 
 ---
 
 ## Phase 2: Scoring & Location Decision
 
-**Mark "scoring" as in_progress.**
+**Mark Phase 2 issue as in_progress: \`bd update <phase-2-id> --status=in_progress\`.**
 
 ### Scoring Matrix
 
@@ -177,13 +175,13 @@ AGENTS_LOCATIONS = [
 ]
 \`\`\`
 
-**Mark "scoring" as completed.**
+**Close Phase 2 issue: \`bd close <phase-2-id>\`.**
 
 ---
 
 ## Phase 3: Generate AGENTS.md
 
-**Mark "generate" as in_progress.**
+**Mark Phase 3 issue as in_progress: \`bd update <phase-3-id> --status=in_progress\`.**
 
 <critical>
 **File Writing Rule**: If AGENTS.md already exists at the target path → use \`Edit\` tool. If it does NOT exist → use \`Write\` tool.
@@ -254,13 +252,13 @@ for loc in AGENTS_LOCATIONS (except root):
   \\\`)
 \`\`\`
 
-**Wait for all. Mark "generate" as completed.**
+**Wait for all. Close Phase 3 issue: \`bd close <phase-3-id>\`.**
 
 ---
 
 ## Phase 4: Review & Deduplicate
 
-**Mark "review" as in_progress.**
+**Mark Phase 4 issue as in_progress: \`bd update <phase-4-id> --status=in_progress\`.**
 
 For each generated file:
 - Remove generic advice
@@ -268,7 +266,7 @@ For each generated file:
 - Trim to size limits
 - Verify telegraphic style
 
-**Mark "review" as completed.**
+**Close Phase 4 issue: \`bd close <phase-4-id>\`.**
 
 ---
 

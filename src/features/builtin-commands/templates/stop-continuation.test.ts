@@ -18,8 +18,8 @@ describe("stop-continuation template", () => {
     // when - we check the content
 
     // then - it should mention key behaviors
-    expect(STOP_CONTINUATION_TEMPLATE).toContain("todo-continuation-enforcer")
+    expect(STOP_CONTINUATION_TEMPLATE).toContain("beads-continuation-enforcer")
     expect(STOP_CONTINUATION_TEMPLATE).toContain("Ralph Loop")
-    expect(STOP_CONTINUATION_TEMPLATE).toContain("boulder state")
+    expect(STOP_CONTINUATION_TEMPLATE).toContain("beads work state")
   })
 })

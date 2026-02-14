@@ -46,7 +46,7 @@ describe("slashcommand tool - synchronous description", () => {
     // given
     const commands = [
       createMockCommand("commit", "Git commit"),
-      createMockCommand("plan", "Create plan"),
+      createMockCommand("start-work", "Start work session"),
     ]
     const skills = [
       createMockSkill("playwright", "Browser automation"),
@@ -59,7 +59,7 @@ describe("slashcommand tool - synchronous description", () => {
 
     // then
     expect(tool.description).toContain("commit")
-    expect(tool.description).toContain("plan")
+    expect(tool.description).toContain("start-work")
     expect(tool.description).not.toContain("playwright")
     expect(tool.description).not.toContain("frontend-ui-ux")
     expect(tool.description).not.toContain("git-master")

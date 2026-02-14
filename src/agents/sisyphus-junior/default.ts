@@ -10,14 +10,11 @@
 import { resolvePromptAppend } from "../builtin-agents/resolve-file-uri"
 
 export function buildDefaultSisyphusJuniorPrompt(
-  useTaskSystem: boolean,
+  _useTaskSystem: boolean,
   promptAppend?: string
 ): string {
-  const todoDiscipline = buildTodoDisciplineSection(useTaskSystem)
-  const constraintsSection = buildConstraintsSection(useTaskSystem)
-  const verificationText = useTaskSystem
-    ? "All tasks marked completed"
-    : "All todos marked completed"
+  const constraintsSection = buildConstraintsSection()
+  const todoDiscipline = buildTodoDisciplineSection()
 
   const prompt = `<Role>
 Sisyphus-Junior - Focused executor from OhMyOpenCode.
@@ -32,7 +29,7 @@ ${todoDiscipline}
 Task NOT complete without:
 - lsp_diagnostics clean on changed files
 - Build passes (if applicable)
-- ${verificationText}
+- All beads issues closed (\`bd list --status=open\` returns none for this work)
 </Verification>
 
 <Style>
@@ -45,20 +42,7 @@ Task NOT complete without:
   return prompt + "\n\n" + resolvePromptAppend(promptAppend)
 }
 
-function buildConstraintsSection(useTaskSystem: boolean): string {
-  if (useTaskSystem) {
-    return `<Critical_Constraints>
-BLOCKED ACTIONS (will fail if attempted):
-- task (agent delegation tool): BLOCKED — you cannot delegate work to other agents
-
-ALLOWED tools:
-- call_omo_agent: You CAN spawn explore/librarian agents for research
-- task_create, task_update, task_list, task_get: ALLOWED — use these for tracking your work
-
-You work ALONE for implementation. No delegation of implementation tasks.
-</Critical_Constraints>`
-  }
-
+function buildConstraintsSection(): string {
   return `<Critical_Constraints>
 BLOCKED ACTIONS (will fail if attempted):
 - task (agent delegation tool): BLOCKED — you cannot delegate work to other agents
@@ -68,26 +52,15 @@ You work ALONE for implementation. No delegation of implementation tasks.
 </Critical_Constraints>`
 }
 
-function buildTodoDisciplineSection(useTaskSystem: boolean): string {
-  if (useTaskSystem) {
-    return `<Task_Discipline>
-TASK OBSESSION (NON-NEGOTIABLE):
-- 2+ steps → TaskCreate FIRST, atomic breakdown
-- TaskUpdate(status="in_progress") before starting (ONE at a time)
-- TaskUpdate(status="completed") IMMEDIATELY after each step
-- NEVER batch completions
+function buildTodoDisciplineSection(): string {
+  return `<Beads_Discipline>
+ISSUE TRACKING WITH BEADS (NON-NEGOTIABLE):
+- 2+ steps → \`bd create --title="..." --type=task --priority=2\` FIRST, atomic breakdown
+- \`bd update <id> --status in_progress\` before starting (ONE at a time)
+- \`bd close <id>\` IMMEDIATELY after each step
+- NEVER batch closures
+- Use \`bd dep add <issue> <depends-on>\` for dependencies
 
-No tasks on multi-step work = INCOMPLETE WORK.
-</Task_Discipline>`
-  }
-
-  return `<Todo_Discipline>
-TODO OBSESSION (NON-NEGOTIABLE):
-- 2+ steps → todowrite FIRST, atomic breakdown
-- Mark in_progress before starting (ONE at a time)
-- Mark completed IMMEDIATELY after each step
-- NEVER batch completions
-
-No todos on multi-step work = INCOMPLETE WORK.
-</Todo_Discipline>`
+No beads issues on multi-step work = INCOMPLETE WORK.
+</Beads_Discipline>`
 }

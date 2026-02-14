@@ -1,16 +1,12 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 import {
-  readBoulderState,
-  writeBoulderState,
-  appendSessionId,
-  findPrometheusPlans,
-  getPlanProgress,
-  createBoulderState,
-  getPlanName,
-  clearBoulderState,
+  readActiveWorkState,
+  writeActiveWorkState,
+  appendActiveWorkSessionId,
+  createActiveWorkState,
 } from "../../features/boulder-state"
 import { log } from "../../shared/logger"
-import { getSessionAgent, updateSessionAgent } from "../../features/claude-code-session-state"
+import { updateSessionAgent } from "../../features/claude-code-session-state"
 
 export const HOOK_NAME = "start-work" as const
 
@@ -25,25 +21,19 @@ interface StartWorkHookOutput {
   parts: Array<{ type: string; text?: string }>
 }
 
-function extractUserRequestPlanName(promptText: string): string | null {
+/**
+ * Best-effort extraction of an issue hint from the user-request tag.
+ * Returns a cleaned string (beads issue ID, partial title, etc.) or null.
+ */
+function extractIssueHint(promptText: string): string | null {
   const userRequestMatch = promptText.match(/<user-request>\s*([\s\S]*?)\s*<\/user-request>/i)
   if (!userRequestMatch) return null
-  
+
   const rawArg = userRequestMatch[1].trim()
   if (!rawArg) return null
-  
+
   const cleanedArg = rawArg.replace(KEYWORD_PATTERN, "").trim()
   return cleanedArg || null
-}
-
-function findPlanByName(plans: string[], requestedName: string): string | null {
-  const lowerName = requestedName.toLowerCase()
-  
-  const exactMatch = plans.find(p => getPlanName(p).toLowerCase() === lowerName)
-  if (exactMatch) return exactMatch
-  
-  const partialMatch = plans.find(p => getPlanName(p).toLowerCase().includes(lowerName))
-  return partialMatch || null
 }
 
 export function createStartWorkHook(ctx: PluginInput) {
@@ -60,7 +50,6 @@ export function createStartWorkHook(ctx: PluginInput) {
         .trim() || ""
 
       // Only trigger on actual command execution (contains <session-context> tag)
-      // NOT on description text like "Start Sisyphus work session from Prometheus plan"
       const isStartWorkCommand = promptText.includes("<session-context>")
 
       if (!isStartWorkCommand) {
@@ -73,155 +62,67 @@ export function createStartWorkHook(ctx: PluginInput) {
 
       updateSessionAgent(input.sessionID, "atlas") // Always switch: fixes #1298
 
-      const existingState = readBoulderState(ctx.directory)
       const sessionId = input.sessionID
       const timestamp = new Date().toISOString()
 
       let contextInfo = ""
-      
-      const explicitPlanName = extractUserRequestPlanName(promptText)
-      
-      if (explicitPlanName) {
-        log(`[${HOOK_NAME}] Explicit plan name requested: ${explicitPlanName}`, {
-          sessionID: input.sessionID,
-        })
-        
-        const allPlans = findPrometheusPlans(ctx.directory)
-        const matchedPlan = findPlanByName(allPlans, explicitPlanName)
-        
-        if (matchedPlan) {
-          const progress = getPlanProgress(matchedPlan)
-          
-          if (progress.isComplete) {
-            contextInfo = `
-## Plan Already Complete
 
-The requested plan "${getPlanName(matchedPlan)}" has been completed.
-All ${progress.total} tasks are done. Create a new plan with: /plan "your task"`
-          } else {
-            if (existingState) {
-              clearBoulderState(ctx.directory)
-            }
-            const newState = createBoulderState(matchedPlan, sessionId, "atlas")
-            writeBoulderState(ctx.directory, newState)
-            
-            contextInfo = `
-## Auto-Selected Plan
+      const issueHint = extractIssueHint(promptText)
+      const existingState = readActiveWorkState(ctx.directory)
 
-**Plan**: ${getPlanName(matchedPlan)}
-**Path**: ${matchedPlan}
-**Progress**: ${progress.completed}/${progress.total} tasks
-**Session ID**: ${sessionId}
-**Started**: ${timestamp}
+      if (existingState && !issueHint) {
+        // Resume existing active work session
+        appendActiveWorkSessionId(ctx.directory, sessionId)
+        const issueLabel = existingState.active_issue_id
+          ? `${existingState.active_issue_id}${existingState.active_issue_title ? ` – ${existingState.active_issue_title}` : ""}`
+          : "unknown"
 
-boulder.json has been created. Read the plan and begin execution.`
-          }
-        } else {
-          const incompletePlans = allPlans.filter(p => !getPlanProgress(p).isComplete)
-          if (incompletePlans.length > 0) {
-            const planList = incompletePlans.map((p, i) => {
-              const prog = getPlanProgress(p)
-              return `${i + 1}. [${getPlanName(p)}] - Progress: ${prog.completed}/${prog.total}`
-            }).join("\n")
-            
-            contextInfo = `
-## Plan Not Found
+        contextInfo = `
+## Resuming Active Work Session
 
-Could not find a plan matching "${explicitPlanName}".
-
-Available incomplete plans:
-${planList}
-
-Ask the user which plan to work on.`
-          } else {
-            contextInfo = `
-## Plan Not Found
-
-Could not find a plan matching "${explicitPlanName}".
-No incomplete plans available. Create a new plan with: /plan "your task"`
-          }
-        }
-      } else if (existingState) {
-        const progress = getPlanProgress(existingState.active_plan)
-        
-        if (!progress.isComplete) {
-          appendSessionId(ctx.directory, sessionId)
-          contextInfo = `
-## Active Work Session Found
-
-**Status**: RESUMING existing work
-**Plan**: ${existingState.plan_name}
-**Path**: ${existingState.active_plan}
-**Progress**: ${progress.completed}/${progress.total} tasks completed
+**Active Issue**: ${issueLabel}
 **Sessions**: ${existingState.session_ids.length + 1} (current session appended)
 **Started**: ${existingState.started_at}
 
-The current session (${sessionId}) has been added to session_ids.
-Read the plan file and continue from the first unchecked task.`
-        } else {
-          contextInfo = `
-## Previous Work Complete
+Run \`bd show ${existingState.active_issue_id || "<issue-id>"}\` to review the issue, then continue working.
+Check progress with \`bd list --status=in_progress\`.`
+      } else if (issueHint) {
+        // User provided an issue hint — create fresh work state
+        const newState = createActiveWorkState(sessionId, issueHint, null, "atlas")
+        writeActiveWorkState(ctx.directory, newState)
 
-The previous plan (${existingState.plan_name}) has been completed.
-Looking for new plans...`
-        }
-      }
+        contextInfo = `
+## Starting Work on Specified Issue
 
-      if ((!existingState && !explicitPlanName) || (existingState && !explicitPlanName && getPlanProgress(existingState.active_plan).isComplete)) {
-        const plans = findPrometheusPlans(ctx.directory)
-        const incompletePlans = plans.filter(p => !getPlanProgress(p).isComplete)
-        
-        if (plans.length === 0) {
-          contextInfo += `
-
-## No Plans Found
-
-No Prometheus plan files found at .sisyphus/plans/
-Use Prometheus to create a work plan first: /plan "your task"`
-        } else if (incompletePlans.length === 0) {
-          contextInfo += `
-
-## All Plans Complete
-
-All ${plans.length} plan(s) are complete. Create a new plan with: /plan "your task"`
-        } else if (incompletePlans.length === 1) {
-          const planPath = incompletePlans[0]
-          const progress = getPlanProgress(planPath)
-          const newState = createBoulderState(planPath, sessionId, "atlas")
-          writeBoulderState(ctx.directory, newState)
-
-          contextInfo += `
-
-## Auto-Selected Plan
-
-**Plan**: ${getPlanName(planPath)}
-**Path**: ${planPath}
-**Progress**: ${progress.completed}/${progress.total} tasks
+**Issue hint**: ${issueHint}
 **Session ID**: ${sessionId}
 **Started**: ${timestamp}
 
-boulder.json has been created. Read the plan and begin execution.`
-        } else {
-          const planList = incompletePlans.map((p, i) => {
-            const progress = getPlanProgress(p)
-            const stat = require("node:fs").statSync(p)
-            const modified = new Date(stat.mtimeMs).toISOString()
-            return `${i + 1}. [${getPlanName(p)}] - Modified: ${modified} - Progress: ${progress.completed}/${progress.total}`
-          }).join("\n")
+Resolve the issue using beads:
+1. Run \`bd show ${issueHint}\` to find and review the issue (try exact ID or search by title).
+2. If the hint doesn't match an ID exactly, run \`bd ready --json\` and pick the closest match.
+3. Mark it in-progress: \`bd update <id> --status in_progress\`
+4. Begin implementation.`
+      } else {
+        // No existing state, no hint — discover work from beads queue
+        const newState = createActiveWorkState(sessionId, null, null, "atlas")
+        writeActiveWorkState(ctx.directory, newState)
 
-          contextInfo += `
+        contextInfo = `
+## Discover Available Work
 
-<system-reminder>
-## Multiple Plans Found
+**Session ID**: ${sessionId}
+**Started**: ${timestamp}
 
-Current Time: ${timestamp}
-Session ID: ${sessionId}
+No active work session found. Use beads to find and start work:
 
-${planList}
+1. Run \`bd ready\` to see issues with no blockers.
+2. If no ready issues, run \`bd list --status=open\` for all open work.
+3. Pick an issue and mark it in-progress: \`bd update <id> --status in_progress\`
+4. Begin implementation.
 
-Ask the user which plan to work on. Present the options above and wait for their response.
-</system-reminder>`
-        }
+If there are no issues at all, ask the user what they'd like to work on and create one:
+\`bd create --title="..." --type=task --priority=2\``
       }
 
       const idx = output.parts.findIndex((p) => p.type === "text" && p.text)
@@ -229,13 +130,14 @@ Ask the user which plan to work on. Present the options above and wait for their
         output.parts[idx].text = output.parts[idx].text
           .replace(/\$SESSION_ID/g, sessionId)
           .replace(/\$TIMESTAMP/g, timestamp)
-        
+
         output.parts[idx].text += `\n\n---\n${contextInfo}`
       }
 
       log(`[${HOOK_NAME}] Context injected`, {
         sessionID: input.sessionID,
         hasExistingState: !!existingState,
+        issueHint,
       })
     },
   }

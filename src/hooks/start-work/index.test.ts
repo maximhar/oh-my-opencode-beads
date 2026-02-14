@@ -1,14 +1,15 @@
 import { describe, expect, test, beforeEach, afterEach, spyOn } from "bun:test"
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { tmpdir, homedir } from "node:os"
+import { tmpdir } from "node:os"
 import { randomUUID } from "node:crypto"
 import { createStartWorkHook } from "./index"
 import {
-  writeBoulderState,
-  clearBoulderState,
+  writeActiveWorkState,
+  clearActiveWorkState,
+  readActiveWorkState,
 } from "../../features/boulder-state"
-import type { BoulderState } from "../../features/boulder-state"
+import type { ActiveWorkState } from "../../features/boulder-state"
 import * as sessionState from "../../features/claude-code-session-state"
 
 describe("start-work hook", () => {
@@ -31,11 +32,11 @@ describe("start-work hook", () => {
     if (!existsSync(sisyphusDir)) {
       mkdirSync(sisyphusDir, { recursive: true })
     }
-    clearBoulderState(testDir)
+    clearActiveWorkState(testDir)
   })
 
   afterEach(() => {
-    clearBoulderState(testDir)
+    clearActiveWorkState(testDir)
     if (existsSync(testDir)) {
       rmSync(testDir, { recursive: true, force: true })
     }
@@ -81,18 +82,39 @@ describe("start-work hook", () => {
       expect(output.parts[0].text).toContain("---")
     })
 
-    test("should inject resume info when existing boulder state found", async () => {
-      // given - existing boulder state with incomplete plan
-      const planPath = join(testDir, "test-plan.md")
-      writeFileSync(planPath, "# Plan\n- [ ] Task 1\n- [x] Task 2")
+    test("should inject beads discovery guidance when no active state and no hint", async () => {
+      // given - no active work state
+      const hook = createStartWorkHook(createMockPluginInput())
+      const output = {
+        parts: [{ type: "text", text: "<session-context></session-context>" }],
+      }
 
-      const state: BoulderState = {
-        active_plan: planPath,
+      // when
+      await hook["chat.message"](
+        { sessionID: "session-123" },
+        output
+      )
+
+      // then - should show beads discovery instructions
+      expect(output.parts[0].text).toContain("Discover Available Work")
+      expect(output.parts[0].text).toContain("bd ready")
+      expect(output.parts[0].text).toContain("bd update")
+      expect(output.parts[0].text).toContain("bd create")
+      // Should NOT reference plan files or boulder.json
+      expect(output.parts[0].text).not.toContain(".sisyphus/plans")
+      expect(output.parts[0].text).not.toContain("boulder.json")
+    })
+
+    test("should inject resume info when existing active work state found", async () => {
+      // given - existing active work state
+      const state: ActiveWorkState = {
+        active_issue_id: "beads-abc",
+        active_issue_title: "Fix login bug",
         started_at: "2026-01-02T10:00:00Z",
         session_ids: ["session-1"],
-        plan_name: "test-plan",
+        agent: "atlas",
       }
-      writeBoulderState(testDir, state)
+      writeActiveWorkState(testDir, state)
 
       const hook = createStartWorkHook(createMockPluginInput())
       const output = {
@@ -105,9 +127,11 @@ describe("start-work hook", () => {
         output
       )
 
-      // then - should show resuming status
-      expect(output.parts[0].text).toContain("RESUMING")
-      expect(output.parts[0].text).toContain("test-plan")
+      // then - should show resuming status with beads details
+      expect(output.parts[0].text).toContain("Resuming Active Work Session")
+      expect(output.parts[0].text).toContain("beads-abc")
+      expect(output.parts[0].text).toContain("Fix login bug")
+      expect(output.parts[0].text).toContain("bd show")
     })
 
     test("should replace $SESSION_ID placeholder", async () => {
@@ -156,22 +180,18 @@ describe("start-work hook", () => {
       expect(output.parts[0].text).toMatch(/\d{4}-\d{2}-\d{2}T/)
     })
 
-    test("should auto-select when only one incomplete plan among multiple plans", async () => {
-      // given - multiple plans but only one incomplete
-      const plansDir = join(testDir, ".sisyphus", "plans")
-      mkdirSync(plansDir, { recursive: true })
-
-      // Plan 1: complete (all checked)
-      const plan1Path = join(plansDir, "plan-complete.md")
-      writeFileSync(plan1Path, "# Plan Complete\n- [x] Task 1\n- [x] Task 2")
-
-      // Plan 2: incomplete (has unchecked)
-      const plan2Path = join(plansDir, "plan-incomplete.md")
-      writeFileSync(plan2Path, "# Plan Incomplete\n- [ ] Task 1\n- [x] Task 2")
-
+    test("should use explicit issue hint from user-request tag", async () => {
+      // given - user specifies an issue hint
       const hook = createStartWorkHook(createMockPluginInput())
       const output = {
-        parts: [{ type: "text", text: "<session-context></session-context>" }],
+        parts: [
+          {
+            type: "text",
+            text: `<session-context>
+<user-request>beads-xyz</user-request>
+</session-context>`,
+          },
+        ],
       }
 
       // when
@@ -180,88 +200,22 @@ describe("start-work hook", () => {
         output
       )
 
-      // then - should auto-select the incomplete plan, not ask user
-      expect(output.parts[0].text).toContain("Auto-Selected Plan")
-      expect(output.parts[0].text).toContain("plan-incomplete")
-      expect(output.parts[0].text).not.toContain("Multiple Plans Found")
+      // then - should reference the issue hint in guidance
+      expect(output.parts[0].text).toContain("Starting Work on Specified Issue")
+      expect(output.parts[0].text).toContain("beads-xyz")
+      expect(output.parts[0].text).toContain("bd show beads-xyz")
     })
 
-    test("should wrap multiple plans message in system-reminder tag", async () => {
-      // given - multiple incomplete plans
-      const plansDir = join(testDir, ".sisyphus", "plans")
-      mkdirSync(plansDir, { recursive: true })
-
-      const plan1Path = join(plansDir, "plan-a.md")
-      writeFileSync(plan1Path, "# Plan A\n- [ ] Task 1")
-
-      const plan2Path = join(plansDir, "plan-b.md")
-      writeFileSync(plan2Path, "# Plan B\n- [ ] Task 2")
-
-      const hook = createStartWorkHook(createMockPluginInput())
-      const output = {
-        parts: [{ type: "text", text: "<session-context></session-context>" }],
-      }
-
-      // when
-      await hook["chat.message"](
-        { sessionID: "session-123" },
-        output
-      )
-
-      // then - should use system-reminder tag format
-      expect(output.parts[0].text).toContain("<system-reminder>")
-      expect(output.parts[0].text).toContain("</system-reminder>")
-      expect(output.parts[0].text).toContain("Multiple Plans Found")
-    })
-
-    test("should use 'ask user' prompt style for multiple plans", async () => {
-      // given - multiple incomplete plans
-      const plansDir = join(testDir, ".sisyphus", "plans")
-      mkdirSync(plansDir, { recursive: true })
-
-      const plan1Path = join(plansDir, "plan-x.md")
-      writeFileSync(plan1Path, "# Plan X\n- [ ] Task 1")
-
-      const plan2Path = join(plansDir, "plan-y.md")
-      writeFileSync(plan2Path, "# Plan Y\n- [ ] Task 2")
-
-      const hook = createStartWorkHook(createMockPluginInput())
-      const output = {
-        parts: [{ type: "text", text: "<session-context></session-context>" }],
-      }
-
-      // when
-      await hook["chat.message"](
-        { sessionID: "session-123" },
-        output
-      )
-
-      // then - should prompt agent to ask user, not ask directly
-      expect(output.parts[0].text).toContain("Ask the user")
-      expect(output.parts[0].text).not.toContain("Which plan would you like to work on?")
-    })
-
-    test("should select explicitly specified plan name from user-request, ignoring existing boulder state", async () => {
-      // given - existing boulder state pointing to old plan
-      const plansDir = join(testDir, ".sisyphus", "plans")
-      mkdirSync(plansDir, { recursive: true })
-
-      // Old plan (in boulder state)
-      const oldPlanPath = join(plansDir, "old-plan.md")
-      writeFileSync(oldPlanPath, "# Old Plan\n- [ ] Old Task 1")
-
-      // New plan (user wants this one)
-      const newPlanPath = join(plansDir, "new-plan.md")
-      writeFileSync(newPlanPath, "# New Plan\n- [ ] New Task 1")
-
-      // Set up stale boulder state pointing to old plan
-      const staleState: BoulderState = {
-        active_plan: oldPlanPath,
+    test("should override existing active state when user provides issue hint", async () => {
+      // given - existing active work state AND user provides a new issue hint
+      const existingState: ActiveWorkState = {
+        active_issue_id: "beads-old",
+        active_issue_title: "Old work",
         started_at: "2026-01-01T10:00:00Z",
         session_ids: ["old-session"],
-        plan_name: "old-plan",
+        agent: "atlas",
       }
-      writeBoulderState(testDir, staleState)
+      writeActiveWorkState(testDir, existingState)
 
       const hook = createStartWorkHook(createMockPluginInput())
       const output = {
@@ -269,63 +223,55 @@ describe("start-work hook", () => {
           {
             type: "text",
             text: `<session-context>
-<user-request>new-plan</user-request>
+<user-request>beads-new</user-request>
 </session-context>`,
           },
         ],
       }
 
-      // when - user explicitly specifies new-plan
+      // when
       await hook["chat.message"](
         { sessionID: "session-123" },
         output
       )
 
-      // then - should select new-plan, NOT resume old-plan
-      expect(output.parts[0].text).toContain("new-plan")
-      expect(output.parts[0].text).not.toContain("RESUMING")
-      expect(output.parts[0].text).not.toContain("old-plan")
+      // then - should start fresh with new issue, NOT resume old
+      expect(output.parts[0].text).toContain("beads-new")
+      expect(output.parts[0].text).not.toContain("Resuming")
+      expect(output.parts[0].text).not.toContain("beads-old")
+
+      // Active state should be updated
+      const updatedState = readActiveWorkState(testDir)
+      expect(updatedState?.active_issue_id).toBe("beads-new")
     })
 
-    test("should strip ultrawork/ulw keywords from plan name argument", async () => {
-      // given - plan with ultrawork keyword in user-request
-      const plansDir = join(testDir, ".sisyphus", "plans")
-      mkdirSync(plansDir, { recursive: true })
-
-      const planPath = join(plansDir, "my-feature-plan.md")
-      writeFileSync(planPath, "# My Feature Plan\n- [ ] Task 1")
-
+    test("should strip ultrawork/ulw keywords from issue hint", async () => {
+      // given - user specifies issue with ultrawork keyword
       const hook = createStartWorkHook(createMockPluginInput())
       const output = {
         parts: [
           {
             type: "text",
             text: `<session-context>
-<user-request>my-feature-plan ultrawork</user-request>
+<user-request>fix-auth-bug ultrawork</user-request>
 </session-context>`,
           },
         ],
       }
 
-      // when - user specifies plan with ultrawork keyword
+      // when
       await hook["chat.message"](
         { sessionID: "session-123" },
         output
       )
 
-      // then - should find plan without ultrawork suffix
-      expect(output.parts[0].text).toContain("my-feature-plan")
-      expect(output.parts[0].text).toContain("Auto-Selected Plan")
+      // then - should use cleaned hint without ultrawork
+      expect(output.parts[0].text).toContain("fix-auth-bug")
+      expect(output.parts[0].text).toContain("Starting Work on Specified Issue")
     })
 
-    test("should strip ulw keyword from plan name argument", async () => {
-      // given - plan with ulw keyword in user-request
-      const plansDir = join(testDir, ".sisyphus", "plans")
-      mkdirSync(plansDir, { recursive: true })
-
-      const planPath = join(plansDir, "api-refactor.md")
-      writeFileSync(planPath, "# API Refactor\n- [ ] Task 1")
-
+    test("should strip ulw keyword from issue hint", async () => {
+      // given - user specifies issue with ulw keyword
       const hook = createStartWorkHook(createMockPluginInput())
       const output = {
         parts: [
@@ -344,29 +290,37 @@ describe("start-work hook", () => {
         output
       )
 
-      // then - should find plan without ulw suffix
+      // then - should use cleaned hint without ulw
       expect(output.parts[0].text).toContain("api-refactor")
-      expect(output.parts[0].text).toContain("Auto-Selected Plan")
+      expect(output.parts[0].text).toContain("Starting Work on Specified Issue")
     })
 
-    test("should match plan by partial name", async () => {
-      // given - user specifies partial plan name
-      const plansDir = join(testDir, ".sisyphus", "plans")
-      mkdirSync(plansDir, { recursive: true })
-
-      const planPath = join(plansDir, "2026-01-15-feature-implementation.md")
-      writeFileSync(planPath, "# Feature Implementation\n- [ ] Task 1")
-
+    test("should write active work state to disk for beads discovery flow", async () => {
+      // given - no existing state
       const hook = createStartWorkHook(createMockPluginInput())
       const output = {
-        parts: [
-          {
-            type: "text",
-            text: `<session-context>
-<user-request>feature-implementation</user-request>
-</session-context>`,
-          },
-        ],
+        parts: [{ type: "text", text: "<session-context></session-context>" }],
+      }
+
+      // when
+      await hook["chat.message"](
+        { sessionID: "ses-new" },
+        output
+      )
+
+      // then - active work state should be persisted
+      const state = readActiveWorkState(testDir)
+      expect(state).not.toBeNull()
+      expect(state?.session_ids).toContain("ses-new")
+      expect(state?.agent).toBe("atlas")
+      expect(state?.active_issue_id).toBeNull()
+    })
+
+    test("should not reference plan files or boulder.json in output", async () => {
+      // given - hook triggered with no state
+      const hook = createStartWorkHook(createMockPluginInput())
+      const output = {
+        parts: [{ type: "text", text: "<session-context></session-context>" }],
       }
 
       // when
@@ -375,9 +329,11 @@ describe("start-work hook", () => {
         output
       )
 
-      // then - should find plan by partial match
-      expect(output.parts[0].text).toContain("2026-01-15-feature-implementation")
-      expect(output.parts[0].text).toContain("Auto-Selected Plan")
+      // then - no legacy references
+      expect(output.parts[0].text).not.toContain(".sisyphus/plans")
+      expect(output.parts[0].text).not.toContain("boulder.json")
+      expect(output.parts[0].text).not.toContain("Prometheus")
+      expect(output.parts[0].text).not.toContain("/plan ")
     })
   })
 
@@ -385,7 +341,7 @@ describe("start-work hook", () => {
     test("should update session agent to Atlas when start-work command is triggered", async () => {
       // given
       const updateSpy = spyOn(sessionState, "updateSessionAgent")
-      
+
       const hook = createStartWorkHook(createMockPluginInput())
       const output = {
         parts: [{ type: "text", text: "<session-context></session-context>" }],

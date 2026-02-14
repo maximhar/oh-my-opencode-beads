@@ -56,8 +56,7 @@ ${REFACTOR_TEMPLATE}
     argumentHint: "<refactoring-target> [--scope=<file|module|project>] [--strategy=<safe|aggressive>]",
   },
   "start-work": {
-    description: "(builtin) Start Sisyphus work session from Prometheus plan",
-    agent: "atlas",
+    description: "(builtin) Start beads-driven work session from issue queue",
     template: `<command-instruction>
 ${START_WORK_TEMPLATE}
 </command-instruction>
@@ -70,10 +69,10 @@ Timestamp: $TIMESTAMP
 <user-request>
 $ARGUMENTS
 </user-request>`,
-    argumentHint: "[plan-name]",
+    argumentHint: "[issue-id]",
   },
   "stop-continuation": {
-    description: "(builtin) Stop all continuation mechanisms (ralph loop, todo continuation, boulder) for this session",
+    description: "(builtin) Stop all continuation mechanisms (ralph loop, beads continuation) for this session",
     template: `<command-instruction>
 ${STOP_CONTINUATION_TEMPLATE}
 </command-instruction>`,

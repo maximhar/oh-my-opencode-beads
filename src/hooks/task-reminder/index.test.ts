@@ -25,7 +25,7 @@ describe("TaskReminderHook", () => {
     }
 
     //#then
-    expect(output.output).not.toContain("task tools haven't been used")
+    expect(output.output).not.toContain("beads tracking tools haven't been used")
   })
 
   test("injects reminder after 10 turns without task tool usage", async () => {
@@ -42,7 +42,7 @@ describe("TaskReminderHook", () => {
     }
 
     //#then
-    expect(output.output).toContain("task tools haven't been used")
+    expect(output.output).toContain("beads tracking tools haven't been used")
   })
 
   test("resets counter when task tool is used", async () => {
@@ -69,7 +69,7 @@ describe("TaskReminderHook", () => {
     }
 
     //#then
-    expect(output.output).not.toContain("task tools haven't been used")
+    expect(output.output).not.toContain("beads tracking tools haven't been used")
   })
 
   test("resets counter after injecting reminder", async () => {
@@ -93,8 +93,8 @@ describe("TaskReminderHook", () => {
     }
 
     //#then
-    expect(output1.output).toContain("task tools haven't been used")
-    expect(output2.output).not.toContain("task tools haven't been used")
+    expect(output1.output).toContain("beads tracking tools haven't been used")
+    expect(output2.output).not.toContain("beads tracking tools haven't been used")
   })
 
   test("tracks separate counters per session", async () => {
@@ -119,8 +119,8 @@ describe("TaskReminderHook", () => {
     }
 
     //#then
-    expect(output1.output).toContain("task tools haven't been used")
-    expect(output2.output).not.toContain("task tools haven't been used")
+    expect(output1.output).toContain("beads tracking tools haven't been used")
+    expect(output2.output).not.toContain("beads tracking tools haven't been used")
   })
 
   test("cleans up counters on session.deleted", async () => {
@@ -145,6 +145,6 @@ describe("TaskReminderHook", () => {
     }
 
     //#then
-    expect(outputAfterDelete.output).not.toContain("task tools haven't been used")
+    expect(outputAfterDelete.output).not.toContain("beads tracking tools haven't been used")
   })
 })

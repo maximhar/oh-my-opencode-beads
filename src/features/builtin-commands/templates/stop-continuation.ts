@@ -1,9 +1,9 @@
 export const STOP_CONTINUATION_TEMPLATE = `Stop all continuation mechanisms for the current session.
 
 This command will:
-1. Stop the todo-continuation-enforcer from automatically continuing incomplete tasks
+1. Stop the beads-continuation-enforcer from automatically continuing incomplete issues
 2. Cancel any active Ralph Loop
-3. Clear the boulder state for the current project
+3. Clear the active beads work state for the current project
 
 After running this command:
 - The session will not auto-continue when idle

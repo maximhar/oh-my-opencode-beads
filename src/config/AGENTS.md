@@ -37,7 +37,7 @@ config/
 
 ## ROOT SCHEMA
 
-`OhMyOpenCodeConfigSchema` composes: `$schema`, `new_task_system_enabled`, `default_run_agent`, `auto_update`, `disabled_{mcps,agents,skills,hooks,commands,tools}`, `agents` (14 agent keys), `categories` (8 built-in), `claude_code`, `sisyphus_agent`, `comment_checker`, `experimental`, `skills`, `ralph_loop`, `background_task`, `notification`, `babysitting`, `git_master`, `browser_automation_engine`, `websearch`, `tmux`, `sisyphus`
+`OhMyOpenCodeConfigSchema` composes: `$schema`, `default_run_agent`, `auto_update`, `disabled_{mcps,agents,skills,hooks,commands,tools}`, `agents` (14 agent keys), `categories` (8 built-in), `claude_code`, `sisyphus_agent`, `comment_checker`, `experimental`, `skills`, `ralph_loop`, `background_task`, `notification`, `babysitting`, `git_master`, `browser_automation_engine`, `websearch`, `tmux`, `sisyphus`
 
 ## CONFIGURATION HIERARCHY
 

@@ -20,8 +20,8 @@ async function showCountdownToast(
   await ctx.client.tui
     .showToast({
       body: {
-        title: "Todo Continuation",
-        message: `Resuming in ${seconds}s... (${incompleteCount} tasks remaining)`,
+        title: "Work Continuation",
+        message: `Resuming in ${seconds}s... (${incompleteCount} work items remaining)`,
         variant: "warning" as const,
         duration: TOAST_DURATION_MS,
       },
@@ -34,6 +34,7 @@ export function startCountdown(args: {
   sessionID: string
   incompleteCount: number
   total: number
+  workItemLabel?: string
   resolvedInfo?: ResolvedMessageInfo
   backgroundManager?: BackgroundManager
   skipAgents: string[]
@@ -43,6 +44,7 @@ export function startCountdown(args: {
     ctx,
     sessionID,
     incompleteCount,
+    workItemLabel,
     resolvedInfo,
     backgroundManager,
     skipAgents,
@@ -71,6 +73,7 @@ export function startCountdown(args: {
       backgroundManager,
       skipAgents,
       resolvedInfo,
+      workItemLabel,
       sessionStateStore,
     })
   }, COUNTDOWN_SECONDS * 1000)
