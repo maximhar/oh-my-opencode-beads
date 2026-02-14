@@ -1,5 +1,9 @@
-import { afterEach, describe, expect, it, mock } from "bun:test"
+import { describe, expect, it } from "bun:test"
 import type { DoctorResult } from "./types"
+import { formatDoctorOutput, formatJsonOutput } from "./formatter"
+import { formatDefault } from "./format-default"
+import { formatStatus } from "./format-status"
+import { formatVerbose } from "./format-verbose"
 
 function createDoctorResult(): DoctorResult {
   return {
@@ -40,76 +44,44 @@ function createDoctorResult(): DoctorResult {
 }
 
 describe("formatter", () => {
-  afterEach(() => {
-    mock.restore()
-  })
-
   describe("formatDoctorOutput", () => {
-    it("dispatches to default formatter for default mode", async () => {
+    it("dispatches to default formatter for default mode", () => {
       //#given
-      const formatDefaultMock = mock(() => "default-output")
-      const formatStatusMock = mock(() => "status-output")
-      const formatVerboseMock = mock(() => "verbose-output")
-      mock.module("./format-default", () => ({ formatDefault: formatDefaultMock }))
-      mock.module("./format-status", () => ({ formatStatus: formatStatusMock }))
-      mock.module("./format-verbose", () => ({ formatVerbose: formatVerboseMock }))
-      const { formatDoctorOutput } = await import(`./formatter?default=${Date.now()}`)
+      const result = createDoctorResult()
 
       //#when
-      const output = formatDoctorOutput(createDoctorResult(), "default")
+      const output = formatDoctorOutput(result, "default")
 
       //#then
-      expect(output).toBe("default-output")
-      expect(formatDefaultMock).toHaveBeenCalledTimes(1)
-      expect(formatStatusMock).toHaveBeenCalledTimes(0)
-      expect(formatVerboseMock).toHaveBeenCalledTimes(0)
+      expect(output).toBe(formatDefault(result))
     })
 
-    it("dispatches to status formatter for status mode", async () => {
+    it("dispatches to status formatter for status mode", () => {
       //#given
-      const formatDefaultMock = mock(() => "default-output")
-      const formatStatusMock = mock(() => "status-output")
-      const formatVerboseMock = mock(() => "verbose-output")
-      mock.module("./format-default", () => ({ formatDefault: formatDefaultMock }))
-      mock.module("./format-status", () => ({ formatStatus: formatStatusMock }))
-      mock.module("./format-verbose", () => ({ formatVerbose: formatVerboseMock }))
-      const { formatDoctorOutput } = await import(`./formatter?status=${Date.now()}`)
+      const result = createDoctorResult()
 
       //#when
-      const output = formatDoctorOutput(createDoctorResult(), "status")
+      const output = formatDoctorOutput(result, "status")
 
       //#then
-      expect(output).toBe("status-output")
-      expect(formatDefaultMock).toHaveBeenCalledTimes(0)
-      expect(formatStatusMock).toHaveBeenCalledTimes(1)
-      expect(formatVerboseMock).toHaveBeenCalledTimes(0)
+      expect(output).toBe(formatStatus(result))
     })
 
-    it("dispatches to verbose formatter for verbose mode", async () => {
+    it("dispatches to verbose formatter for verbose mode", () => {
       //#given
-      const formatDefaultMock = mock(() => "default-output")
-      const formatStatusMock = mock(() => "status-output")
-      const formatVerboseMock = mock(() => "verbose-output")
-      mock.module("./format-default", () => ({ formatDefault: formatDefaultMock }))
-      mock.module("./format-status", () => ({ formatStatus: formatStatusMock }))
-      mock.module("./format-verbose", () => ({ formatVerbose: formatVerboseMock }))
-      const { formatDoctorOutput } = await import(`./formatter?verbose=${Date.now()}`)
+      const result = createDoctorResult()
 
       //#when
-      const output = formatDoctorOutput(createDoctorResult(), "verbose")
+      const output = formatDoctorOutput(result, "verbose")
 
       //#then
-      expect(output).toBe("verbose-output")
-      expect(formatDefaultMock).toHaveBeenCalledTimes(0)
-      expect(formatStatusMock).toHaveBeenCalledTimes(0)
-      expect(formatVerboseMock).toHaveBeenCalledTimes(1)
+      expect(output).toBe(formatVerbose(result))
     })
   })
 
   describe("formatJsonOutput", () => {
-    it("returns valid JSON payload", async () => {
+    it("returns valid JSON payload", () => {
       //#given
-      const { formatJsonOutput } = await import(`./formatter?json=${Date.now()}`)
       const result = createDoctorResult()
 
       //#when

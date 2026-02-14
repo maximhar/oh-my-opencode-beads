@@ -1,23 +1,24 @@
-const { describe, test, expect, mock } = require("bun:test")
+import { afterEach, describe, expect, mock, test } from "bun:test"
 
-mock.module("./session-creator", () => ({
-  createOrGetSession: mock(async () => ({ sessionID: "ses-test-123" })),
-}))
-
-mock.module("./completion-poller", () => ({
-  waitForCompletion: mock(async () => {}),
-}))
-
-mock.module("./message-processor", () => ({
-  processMessages: mock(async () => "agent response"),
-}))
+afterEach(() => {
+  mock.restore()
+})
 
 describe("executeSync", () => {
   test("passes question=false via tools parameter to block question tool", async () => {
     //#given
-    const { executeSync } = require("./sync-executor")
+    mock.module("./session-creator", () => ({
+      createOrGetSession: mock(async () => ({ sessionID: "ses-test-123", isNew: true })),
+    }))
+    mock.module("./completion-poller", () => ({
+      waitForCompletion: mock(async () => {}),
+    }))
+    mock.module("./message-processor", () => ({
+      processMessages: mock(async () => "agent response"),
+    }))
+    const { executeSync } = await import(`./sync-executor?question=${Date.now()}`)
 
-    let promptArgs: any
+    let promptArgs: unknown
     const promptAsync = mock(async (input: any) => {
       promptArgs = input
       return { data: {} }
@@ -48,14 +49,23 @@ describe("executeSync", () => {
 
     //#then
     expect(promptAsync).toHaveBeenCalled()
-    expect(promptArgs.body.tools.question).toBe(false)
+    expect((promptArgs as any).body.tools.question).toBe(false)
   })
 
   test("passes task=false via tools parameter", async () => {
     //#given
-    const { executeSync } = require("./sync-executor")
+    mock.module("./session-creator", () => ({
+      createOrGetSession: mock(async () => ({ sessionID: "ses-test-123", isNew: true })),
+    }))
+    mock.module("./completion-poller", () => ({
+      waitForCompletion: mock(async () => {}),
+    }))
+    mock.module("./message-processor", () => ({
+      processMessages: mock(async () => "agent response"),
+    }))
+    const { executeSync } = await import(`./sync-executor?task=${Date.now()}`)
 
-    let promptArgs: any
+    let promptArgs: unknown
     const promptAsync = mock(async (input: any) => {
       promptArgs = input
       return { data: {} }
@@ -86,6 +96,6 @@ describe("executeSync", () => {
 
     //#then
     expect(promptAsync).toHaveBeenCalled()
-    expect(promptArgs.body.tools.task).toBe(false)
+    expect((promptArgs as any).body.tools.task).toBe(false)
   })
 })
