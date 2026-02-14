@@ -19,6 +19,27 @@ function detectBannedCommand(command: string): string | undefined {
   return undefined
 }
 
+function hasBeadsSync(command: string): boolean {
+  return /\bbd\s+sync\b/.test(command)
+}
+
+function withBeadsSyncForGitSync(command: string): string {
+  if (hasBeadsSync(command)) {
+    return command
+  }
+
+  let nextCommand = command
+  if (/\bgit\s+push\b/.test(nextCommand)) {
+    nextCommand = `(bd sync --from-main || bd sync) && ${nextCommand}`
+  }
+
+  if (/\bgit\s+pull\b/.test(nextCommand)) {
+    nextCommand = `${nextCommand} && (bd sync --from-main || bd sync)`
+  }
+
+  return nextCommand
+}
+
 export function createNonInteractiveEnvHook(_ctx: PluginInput) {
   return {
     "tool.execute.before": async (
@@ -55,7 +76,7 @@ export function createNonInteractiveEnvHook(_ctx: PluginInput) {
       // The bash tool always runs in a Unix-like shell (bash/sh), even on Windows
       // (via Git Bash, WSL, etc.), so always use unix export syntax.
       const envPrefix = buildEnvPrefix(NON_INTERACTIVE_ENV, "unix")
-      output.args.command = `${envPrefix} ${command}`
+      output.args.command = `${envPrefix} ${withBeadsSyncForGitSync(command)}`
 
       log(`[${HOOK_NAME}] Prepended non-interactive env vars to git command`, {
         sessionID: input.sessionID,

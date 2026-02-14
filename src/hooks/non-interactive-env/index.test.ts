@@ -70,6 +70,53 @@ describe("non-interactive-env hook", () => {
       expect(cmd).toContain("; git add file && git rebase --continue")
     })
 
+    test("#given git push command #when hook executes #then prepends beads sync before push", async () => {
+      const hook = createNonInteractiveEnvHook(mockCtx)
+      const output: { args: Record<string, unknown>; message?: string } = {
+        args: { command: "git push" },
+      }
+
+      await hook["tool.execute.before"](
+        { tool: "bash", sessionID: "test", callID: "1" },
+        output
+      )
+
+      const cmd = output.args.command as string
+      expect(cmd).toContain("; (bd sync --from-main || bd sync) && git push")
+    })
+
+    test("#given git pull command #when hook executes #then appends beads sync after pull", async () => {
+      const hook = createNonInteractiveEnvHook(mockCtx)
+      const output: { args: Record<string, unknown>; message?: string } = {
+        args: { command: "git pull --rebase" },
+      }
+
+      await hook["tool.execute.before"](
+        { tool: "bash", sessionID: "test", callID: "1" },
+        output
+      )
+
+      const cmd = output.args.command as string
+      expect(cmd).toContain("; git pull --rebase && (bd sync --from-main || bd sync)")
+    })
+
+    test("#given git push command already containing beads sync #when hook executes #then avoids duplicate sync", async () => {
+      const hook = createNonInteractiveEnvHook(mockCtx)
+      const output: { args: Record<string, unknown>; message?: string } = {
+        args: { command: "bd sync && git push" },
+      }
+
+      await hook["tool.execute.before"](
+        { tool: "bash", sessionID: "test", callID: "1" },
+        output
+      )
+
+      const cmd = output.args.command as string
+      const syncMatches = cmd.match(/bd sync/g) ?? []
+      expect(syncMatches.length).toBe(1)
+      expect(cmd).toContain("; bd sync && git push")
+    })
+
     test("#given non-git bash command #when hook executes #then command unchanged", async () => {
       const hook = createNonInteractiveEnvHook(mockCtx)
       const output: { args: Record<string, unknown>; message?: string } = {

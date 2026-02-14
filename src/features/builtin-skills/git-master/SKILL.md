@@ -553,6 +553,9 @@ git log --oneline $(git merge-base HEAD main 2>/dev/null || git merge-base HEAD 
 ### 6.2 Force Push Decision
 
 ```
+Before any git push/pull sync:
+  -> Run: bd sync --from-main || bd sync
+
 IF fixup was used AND branch has upstream:
   -> Requires: git push --force-with-lease
   -> WARN user about force push implications
@@ -575,6 +578,7 @@ HISTORY:
   ...
 
 NEXT STEPS:
+  - bd sync --from-main || bd sync
   - git push [--force-with-lease]
   - Create PR if ready
 ```
@@ -808,6 +812,9 @@ git diff ORIG_HEAD..HEAD --stat
 ### Push Strategy
 
 ```
+Before push (and after pull):
+  -> Run: bd sync --from-main || bd sync
+
 IF branch never pushed:
   -> git push -u origin <branch>
 
