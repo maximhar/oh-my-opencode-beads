@@ -10,7 +10,7 @@ Learn about Oh My OpenCode, a plugin that transforms OpenCode into the best agen
 
 **Feeling lazy?** Just include `ultrawork` (or `ulw`) in your prompt. That's it. The agent figures out the rest.
 
-**Need precision?** Press **Tab** to enter Prometheus (Planner) mode, create a work plan through an interview process, then execute via beads-driven workflow (`bd ready` → `bd update --status in_progress` → `bd close`).
+**Need precision?** Press **Tab** to enter Prometheus (Planner) mode, create a work plan through an interview process, then run `/start-work` to hand off to Atlas. Execution is beads-driven (`bd ready` → `bd update --status in_progress` → `bd close`).
 
 ---
 
@@ -54,7 +54,9 @@ For complex or critical tasks, press **Tab** to switch to Prometheus (Planner) m
 
 2. **Plan generation** - Based on the interview, Prometheus generates a detailed work plan with tasks, acceptance criteria, and guardrails. Optionally reviewed by Momus (plan reviewer) for high-accuracy validation.
 
-3. **Execute via beads** - Work is decomposed into trackable issues:
+3. **Transition to execution with `/start-work`** - This switches from planning to Atlas execution.
+
+4. **Execute via beads** - Work is decomposed into trackable issues:
    - `bd ready` shows issues with no blockers
    - `bd update <id> --status in_progress` claims an issue
    - Agent implements the work, delegating to specialized sub-agents
@@ -82,7 +84,8 @@ The orchestration system works best when Prometheus plans are decomposed into be
 1. Press Tab → Enter Prometheus mode
 2. Describe work → Prometheus interviews you
 3. Confirm plan → Issues created via bd create with dependencies
-4. Execute → bd ready to find work, bd close when done
+4. Run `/start-work` to transition from planning to execution
+5. Execute → bd ready to find work, bd close when done
 ```
 
 **Prometheus creates the plan. Beads tracks the execution.**

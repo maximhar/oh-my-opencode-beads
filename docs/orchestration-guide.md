@@ -324,12 +324,12 @@ The primary execution workflow:
 - **`bd update <id> --status in_progress`**: Claim an issue
 - **`bd close <id>`**: Mark an issue complete
 
-### `/start-work` (Legacy Fallback)
+### `/start-work` (Planning Handoff)
 
-> **Legacy**: This command uses `.sisyphus/plans/` and `boulder.json` for plan-file orchestration. Prefer the beads workflow above.
+Use this command after Prometheus planning to move into execution mode.
 
-- **Fresh session**: Finds plan in `.sisyphus/plans/` and enters execution mode
-- **Existing boulder**: Resumes from where you left off (reads boulder.json)
+- **Handoff**: Transitions from Prometheus planning to Atlas execution
+- **Issue selection**: Uses beads commands (`bd ready`, `bd update`, `bd show`) to pick and claim work
 - **Effect**: Automatically switches to Atlas agent if not already active
 
 ### Switching Agents Manually
@@ -409,6 +409,6 @@ Run `bd ready` in any new session. It shows all issues with no unresolved blocke
 
 **Use Hephaestus when**: You specifically need GPT-5.2 Codex's reasoning style for deep architectural work or complex debugging.
 
-### "Can I still use /start-work and boulder.json?"
+### "How do I transition from planning to execution?"
 
-Yes, as a **legacy fallback**. The `/start-work` command and `.sisyphus/plans/` workflow still function for backward compatibility. However, beads-driven execution (`bd ready` → `bd update` → `bd close`) is the recommended approach.
+Use `/start-work` after Prometheus creates issues. It performs the planner-to-executor handoff (Prometheus -> Atlas), then execution proceeds with beads (`bd ready` → `bd update` → `bd close`).

@@ -985,7 +985,7 @@ Disable specific built-in commands via `disabled_commands` in `~/.config/opencod
 
 Available commands: `init-deep`, `start-work`
 
-> **Note**: The `start-work` command is a legacy execution trigger for plan-file orchestration. For new projects, use beads (`bd ready` → `bd update --status in_progress` → `bd close`).
+> **Note**: The `start-work` command is the handoff trigger from Prometheus planning to Atlas execution. Execution tracking is beads-driven (`bd ready` → `bd update --status in_progress` → `bd close`).
 
 ## Comment Checker
 
@@ -1019,31 +1019,11 @@ Configure notification behavior for background task completion.
 | -------------- | ------- | ---------------------------------------------------------------------------------------------- |
 | `force_enable` | `false` | Force enable session-notification even if external notification plugins are detected. Default: `false`. |
 
-## Sisyphus Tasks (Legacy)
+## Sisyphus Tasks
 
-> **Note**: The legacy Sisyphus Tasks system (TaskCreate/TaskUpdate) is retained for backward compatibility. For new projects, use **beads** (`bd` CLI) for issue tracking. See [Task System](task-system.md) for details.
+Task tracking is beads-first.
 
-Configure legacy Sisyphus Tasks system:
-
-```json
-{
-  "sisyphus": {
-    "tasks": {
-      "enabled": false,
-      "storage_path": ".sisyphus/tasks",
-      "claude_code_compat": false
-    }
-  }
-}
-```
-
-### Tasks Configuration
-
-| Option               | Default            | Description                                                               |
-| -------------------- | ------------------ | ------------------------------------------------------------------------- |
-| `enabled`            | `false`            | Enable legacy Sisyphus Tasks system                                        |
-| `storage_path`       | `.sisyphus/tasks`  | Storage path for tasks (relative to project root)                           |
-| `claude_code_compat` | `false`            | Enable Claude Code path compatibility mode                                   |
+Use `bd` commands for issue lifecycle management (`ready`, `update --status in_progress`, `close`).
 
 ## MCPs
 

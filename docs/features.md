@@ -218,7 +218,7 @@ Commands are slash-triggered workflows that execute predefined templates.
 | `/ulw-loop` | Start ultrawork loop - continues with ultrawork mode |
 | `/cancel-ralph` | Cancel active Ralph Loop |
 | `/refactor` | Intelligent refactoring with LSP, AST-grep, architecture analysis, and TDD verification |
-| `/start-work` | *(Legacy)* Start Sisyphus work session from Prometheus plan. Prefer beads-driven workflow (`bd ready` → `bd update --status in_progress` → `bd close`). |
+| `/start-work` | Transition from Prometheus planning to Atlas execution. Execution uses beads (`bd ready` → `bd update --status in_progress` → `bd close`). |
 
 ### Command: /init-deep
 
@@ -283,9 +283,9 @@ Everything runs at maximum intensity - parallel agents, background tasks, aggres
 
 ### Command: /start-work
 
-> **Legacy Compatibility**: This command uses `.sisyphus/plans/` and `boulder.json` for plan-file orchestration. For new projects, prefer the **beads-driven workflow** where work is tracked via `bd` CLI (`bd ready` → `bd update --status in_progress` → `bd close`).
+> **Planning Handoff**: Use this command to transition from Prometheus planning to Atlas execution. Issue tracking remains beads-driven via `bd` CLI (`bd ready` → `bd update --status in_progress` → `bd close`).
 
-**Purpose**: Start execution from a Prometheus-generated plan (legacy fallback)
+**Purpose**: Start execution from a Prometheus-generated plan
 
 **Usage**:
 ```
@@ -371,9 +371,9 @@ Hooks intercept and modify behavior at key points in the agent lifecycle.
 | **session-notification** | Stop | OS notifications when agents go idle. Works on macOS, Linux, Windows. |
 | **agent-usage-reminder** | PostToolUse | Reminds you to leverage specialized agents for better results. |
 
-#### Task Management (Legacy)
+#### Task Management
 
-> **Note**: These hooks support the legacy plan-file task system. For new projects, use beads (`bd` CLI) for issue tracking and work management.
+> **Note**: Task tracking is beads-first (`bd` CLI) for issue tracking and work management.
 
 | Hook | Event | Description |
 |------|-------|-------------|
