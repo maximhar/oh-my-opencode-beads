@@ -31,7 +31,7 @@ describe("external-plugin-detector", () => {
       fs.mkdirSync(opencodeDir, { recursive: true })
       fs.writeFileSync(
         path.join(opencodeDir, "opencode.json"),
-        JSON.stringify({ plugin: ["oh-my-opencode"] })
+        JSON.stringify({ plugin: ["oh-my-opencode-beads"] })
       )
 
       // when
@@ -40,7 +40,7 @@ describe("external-plugin-detector", () => {
       // then
       expect(result.detected).toBe(false)
       expect(result.pluginName).toBeNull()
-      expect(result.allPlugins).toContain("oh-my-opencode")
+      expect(result.allPlugins).toContain("oh-my-opencode-beads")
     })
 
     test("should detect opencode-notifier plugin", () => {
@@ -49,7 +49,7 @@ describe("external-plugin-detector", () => {
       fs.mkdirSync(opencodeDir, { recursive: true })
       fs.writeFileSync(
         path.join(opencodeDir, "opencode.json"),
-        JSON.stringify({ plugin: ["oh-my-opencode", "opencode-notifier"] })
+        JSON.stringify({ plugin: ["oh-my-opencode-beads", "opencode-notifier"] })
       )
 
       // when
@@ -66,7 +66,7 @@ describe("external-plugin-detector", () => {
       fs.mkdirSync(opencodeDir, { recursive: true })
       fs.writeFileSync(
         path.join(opencodeDir, "opencode.json"),
-        JSON.stringify({ plugin: ["oh-my-opencode", "opencode-notifier@1.2.3"] })
+        JSON.stringify({ plugin: ["oh-my-opencode-beads", "opencode-notifier@1.2.3"] })
       )
 
       // when
@@ -83,7 +83,7 @@ describe("external-plugin-detector", () => {
       fs.mkdirSync(opencodeDir, { recursive: true })
       fs.writeFileSync(
         path.join(opencodeDir, "opencode.json"),
-        JSON.stringify({ plugin: ["oh-my-opencode", "@mohak34/opencode-notifier"] })
+        JSON.stringify({ plugin: ["oh-my-opencode-beads", "@mohak34/opencode-notifier"] })
       )
 
       // when
@@ -103,7 +103,7 @@ describe("external-plugin-detector", () => {
         `{
           // This is a comment
           "plugin": [
-            "oh-my-opencode",
+            "oh-my-opencode-beads",
             "opencode-notifier" // Another comment
           ]
         }`

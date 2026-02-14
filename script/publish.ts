@@ -4,7 +4,7 @@ import { $ } from "bun"
 import { existsSync } from "node:fs"
 import { join } from "node:path"
 
-const PACKAGE_NAME = "oh-my-opencode"
+const PACKAGE_NAME = "oh-my-opencode-beads"
 const bump = process.env.BUMP as "major" | "minor" | "patch" | undefined
 const versionOverride = process.env.VERSION
 const republishMode = process.env.REPUBLISH === "true"
@@ -20,7 +20,7 @@ const PLATFORM_PACKAGES = [
   "windows-x64",
 ]
 
-console.log("=== Publishing oh-my-opencode (multi-package) ===\n")
+console.log("=== Publishing oh-my-opencode-beads (multi-package) ===\n")
 
 async function fetchPreviousVersion(): Promise<string> {
   try {
@@ -66,7 +66,7 @@ async function updateAllPackageVersions(newVersion: string): Promise<void> {
   // Update optionalDependencies versions in main package.json
   let mainPkg = await Bun.file(mainPkgPath).text()
   for (const platform of PLATFORM_PACKAGES) {
-    const pkgName = `oh-my-opencode-${platform}`
+    const pkgName = `oh-my-opencode-beads-${platform}`
     mainPkg = mainPkg.replace(
       new RegExp(`"${pkgName}": "[^"]+"`),
       `"${pkgName}": "${newVersion}"`
@@ -270,7 +270,7 @@ async function publishAllPackages(version: string): Promise<void> {
       
       const publishPromises = batch.map(async (platform) => {
         const pkgDir = join(process.cwd(), "packages", platform)
-        const pkgName = `oh-my-opencode-${platform}`
+        const pkgName = `oh-my-opencode-beads-${platform}`
         
         console.log(`    Starting ${pkgName}...`)
         const result = await publishPackage(pkgDir, distTag, false, pkgName, version)
