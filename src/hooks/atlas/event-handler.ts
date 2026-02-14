@@ -119,6 +119,11 @@ export function createAtlasEventHandler(input: {
         }
         workItemLabel = issueLabel
       } else {
+        if (!boulderState) {
+          log(`[${HOOK_NAME}] Missing legacy boulder state`, { sessionID })
+          return
+        }
+
         const progress = getPlanProgress(boulderState.active_plan)
         if (progress.isComplete) {
           log(`[${HOOK_NAME}] Work plan complete`, { sessionID, plan: boulderState.plan_name })
