@@ -192,17 +192,10 @@ describe("runner", () => {
         exitCode: 0,
       }
 
-      const formatDoctorOutputMock = mock((result: DoctorResult) => result.summary.total.toString())
-      const formatJsonOutputMock = mock((result: DoctorResult) => JSON.stringify(result))
-
       mock.module("./checks", () => ({
         getAllCheckDefinitions: () => checks,
         gatherSystemInfo: async () => expectedResult.systemInfo,
         gatherToolsSummary: async () => expectedResult.tools,
-      }))
-      mock.module("./formatter", () => ({
-        formatDoctorOutput: formatDoctorOutputMock,
-        formatJsonOutput: formatJsonOutputMock,
       }))
 
       const logSpy = mock(() => {})
@@ -226,8 +219,7 @@ describe("runner", () => {
       expect(startedBeforeResolve.sort()).toEqual(["config", "models", "system", "tools"])
       expect(result.results.length).toBe(4)
       expect(result.exitCode).toBe(0)
-      expect(formatDoctorOutputMock).toHaveBeenCalledTimes(1)
-      expect(formatJsonOutputMock).toHaveBeenCalledTimes(0)
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("System OK"))
     })
   })
 })

@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test"
 
-import { createOrGetSession } from "./session-creator"
 import { _resetForTesting, subagentSessions } from "../../features/claude-code-session-state"
 
 describe("call-omo-agent createOrGetSession", () => {
@@ -35,6 +34,7 @@ describe("call-omo-agent createOrGetSession", () => {
       subagent_type: "explore",
       run_in_background: true,
     }
+    const { createOrGetSession } = await import(`./session-creator?real=${Date.now()}`)
 
     // when
     const result = await createOrGetSession(args as any, toolContext as any, ctx as any)

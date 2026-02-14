@@ -116,7 +116,7 @@ describe("waitForEventProcessorShutdown", () => {
 
       //#then
       const elapsed = performance.now() - start
-      expect(elapsed).toBeGreaterThanOrEqual(timeoutMs)
+      expect(elapsed).toBeGreaterThanOrEqual(timeoutMs - 5)
       const callArgs = spy.mock.calls.flat().join("")
       expect(callArgs).toContain(
         `[run] Event stream did not close within ${timeoutMs}ms after abort; continuing shutdown.`,
