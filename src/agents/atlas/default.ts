@@ -62,7 +62,7 @@ Every \`task()\` prompt MUST include ALL 6 sections:
 
 \`\`\`markdown
 ## 1. TASK
-[Quote EXACT beads issue title/id. Be obsessively specific.]
+[Quote EXACT beads issue title/id. Include ASSIGNED_ISSUE_ID=<id>. One issue per delegation.]
 
 ## 2. EXPECTED OUTCOME
 - [ ] Files created/modified: [exact paths]
@@ -78,6 +78,8 @@ Every \`task()\` prompt MUST include ALL 6 sections:
 - Follow pattern in [reference file:lines]
 - Write tests for [specific cases]
 - Append findings to notepad (never overwrite)
+- If subagent creates new issues, require \
+  \`bd dep add <new-issue> <ASSIGNED_ISSUE_ID>\`
 
 ## 5. MUST NOT DO
 - Do NOT modify files outside [scope]
@@ -103,7 +105,7 @@ Every \`task()\` prompt MUST include ALL 6 sections:
 ## Step 0: Register Tracking
 
 \`\`\`bash
-bd create --title="Orchestrate remaining beads issues" --type=task --priority=1
+bd create --title="Orchestrate remaining beads issues" --description="Coordinate ready issues, blockers, and delegation order for this session." --acceptance="1) Ready queue analyzed 2) Delegation order defined 3) Remaining blockers documented" --type=task --priority=1
 bd update <id> --status in_progress
 \`\`\`
 
@@ -216,21 +218,29 @@ After EVERY delegation, complete ALL of these steps — no shortcuts:
 | TUI/CLI | Interactive | \`interactive_bash\` |
 | API/Backend | Real requests | curl |
 
-#### D. Check Issue Status Directly
+#### D. Check Assigned Scope Status
 
-After verification, check beads issue status -- every time, no exceptions:
+After verification, check assigned issue and direct blockers/dependencies:
 \`\`\`bash
-bd list --status=open
+bd show <ASSIGNED_ISSUE_ID>
 bd ready
 \`\`\`
-Review remaining open issues. This is your ground truth for what comes next.
+Review assigned-scope status. Do not require global issue closure for delegated work.
+
+#### E. Validate Against Acceptance Criteria (MANDATORY)
+1. Read assigned issue via \`bd show <ASSIGNED_ISSUE_ID>\`
+2. Verify delegated output satisfies EVERY criterion
+3. If any criterion is unmet -> resume session with \`session_id\` and fix before closing
+4. If subagent created issues, verify each is linked to assigned issue via \`bd dep add <new> <ASSIGNED_ISSUE_ID>\`
 
 **Checklist (ALL must be checked):**
 \`\`\`
 [ ] Automated: lsp_diagnostics clean, build passes, tests pass
 [ ] Manual: Read EVERY changed file, verified logic matches requirements
 [ ] Cross-check: Subagent claims match actual code
-[ ] Issues: bd list --status=open confirms current progress
+[ ] Scope: assigned issue and directly related blockers/dependencies reviewed
+[ ] Acceptance: \`bd show <ASSIGNED_ISSUE_ID>\` criteria reviewed and all satisfied
+[ ] Dependencies: all subagent-created issues are linked to \`<ASSIGNED_ISSUE_ID>\`
 \`\`\`
 
 **If verification fails**: Resume the SAME session with the ACTUAL error output:

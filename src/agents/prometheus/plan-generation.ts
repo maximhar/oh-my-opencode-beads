@@ -25,14 +25,14 @@ export const PROMETHEUS_PLAN_GENERATION = `# PHASE 2: PLAN GENERATION (Auto-Tran
 
 \`\`\`bash
 # IMMEDIATELY upon trigger detection - NO EXCEPTIONS
-bd create --title="Consult Metis for gap analysis (auto-proceed)" --type=task --priority=1
-bd create --title="Create beads issues for all plan tasks with dependencies" --type=task --priority=1
-bd create --title="Self-review: classify gaps (critical/minor/ambiguous)" --type=task --priority=1
-bd create --title="Present summary with auto-resolved items and decisions needed" --type=task --priority=1
-bd create --title="If decisions needed: wait for user, update issues" --type=task --priority=1
-bd create --title="Ask user about high accuracy mode (Momus review)" --type=task --priority=1
-bd create --title="If high accuracy: Submit to Momus and iterate until OKAY" --type=task --priority=2
-bd create --title="Clean up draft and guide user to bd ready" --type=task --priority=2
+bd create --title="Consult Metis for gap analysis (auto-proceed)" --description="Run Metis review before issue graph creation and capture missing risks/questions." --type=task --priority=1
+bd create --title="Create beads issues for all plan tasks with dependencies" --description="Create complete issue graph for plan scope and wire execution dependencies." --type=task --priority=1
+bd create --title="Self-review: classify gaps (critical/minor/ambiguous)" --description="Review plan quality and classify unresolved gaps by severity." --type=task --priority=1
+bd create --title="Present summary with auto-resolved items and decisions needed" --description="Share concise plan summary and highlight decisions requiring user input." --type=task --priority=1
+bd create --title="If decisions needed: wait for user, update issues" --description="Pause for user decisions and update affected issue descriptions/dependencies." --type=task --priority=1
+bd create --title="Ask user about high accuracy mode (Momus review)" --description="Offer optional Momus review before final plan handoff." --type=task --priority=1
+bd create --title="If high accuracy: Submit to Momus and iterate until OKAY" --description="Run Momus review loop and apply corrections until approval." --type=task --priority=2
+bd create --title="Clean up draft and guide user to /start-work" --description="Remove draft artifacts and direct user to /start-work for execution handoff." --type=task --priority=2
 # Then add dependencies as needed:
 # bd dep add <later-issue> <earlier-issue>
 \`\`\`
@@ -42,7 +42,7 @@ bd create --title="Clean up draft and guide user to bd ready" --type=task --prio
 - Prevents skipping crucial steps like Metis consultation
 - Creates accountability for each phase
 - Enables recovery if session is interrupted
-- Issues persist across sessions via \`bd ready\`
+- Issues persist across sessions
 
 **WORKFLOW:**
 1. Trigger detected -> **IMMEDIATELY** create beads issues for all planning steps
@@ -108,7 +108,7 @@ After receiving Metis's analysis, **DO NOT ask additional questions**. Instead:
 - [Guardrail 1]
 - [Guardrail 2]
 
-Plan recorded as beads issues. Run \`bd ready\` to see available work.
+Plan recorded as beads issues. Run \`/start-work\` to transition to execution.
 \`\`\`
 
 ## Post-Plan Self-Review (MANDATORY)
@@ -183,7 +183,7 @@ Before presenting summary, verify:
 **Decisions Needed** (if any):
 - [Question requiring user input]
 
-Plan recorded as beads issues. Run \`bd ready\` to see available work.
+Plan recorded as beads issues. Run \`/start-work\` to transition to execution.
 \`\`\`
 
 **CRITICAL**: If "Decisions Needed" section exists, wait for user response before presenting final choices.
@@ -212,7 +212,7 @@ Question({
 \`\`\`
 
 **Based on user choice:**
-- **Start Execution** -> Delete draft, issues are ready via \`bd ready\`
+- **Start Execution** -> Delete draft and run \`/start-work\` for Prometheus → Atlas handoff
 - **High Accuracy Review** → Enter Momus loop (PHASE 3)
 
 ---

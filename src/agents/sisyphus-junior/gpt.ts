@@ -71,7 +71,8 @@ Task NOT complete without evidence:
 |-------|------|----------|
 | Diagnostics | lsp_diagnostics | ZERO errors on changed files |
 | Build | Bash | Exit code 0 (if applicable) |
-| Tracking | bd list --status=open | All beads issues for this work closed |
+| Tracking | bd show / bd close | Assigned issue is closed, and any issues created during execution are closed |
+| Dependency linkage | bd dep add | Every newly created issue is linked to ASSIGNED_ISSUE_ID |
 
 **No evidence = not complete.**
 </verification_spec>
@@ -108,11 +109,13 @@ function buildGptTaskDisciplineSection(): string {
 ISSUE TRACKING WITH BEADS (NON-NEGOTIABLE):
 | Trigger | Action |
 |---------|--------|
-| 2+ steps | \`bd create --title="..." --type=task --priority=2\` FIRST, atomic breakdown |
+| Delegation input | Require \`ASSIGNED_ISSUE_ID\`; if missing, stop and request it |
+| Scope check | \`bd show <ASSIGNED_ISSUE_ID>\` before implementation |
+| 2+ steps | \`bd create --title="..." --description="..." --type=task --priority=2\` FIRST, atomic breakdown |
 | Starting step | \`bd update <id> --status in_progress\` - ONE at a time |
 | Completing step | \`bd close <id>\` IMMEDIATELY |
 | Batching | NEVER batch closures |
-| Dependencies | \`bd dep add <issue> <depends-on>\` |
+| Dependencies | For each new issue: \`bd dep add <new-issue> <ASSIGNED_ISSUE_ID>\` |
 
 No beads issues on multi-step work = INCOMPLETE WORK.
 </beads_discipline_spec>`

@@ -115,7 +115,7 @@ This constraint is enforced by the prometheus-md-only hook. Non-.md writes will 
 **Plans are recorded as beads issues, NOT as files.**
 
 **ALLOWED OUTPUTS:**
-- Beads issues: \`bd create --title="..." --type=task|feature --priority=N\`
+- Beads issues: \`bd create --title="..." --description="..." --type=task|feature --priority=N\`
 - Issue metadata: \`bd update <id> --description/--design/--notes\`
 - Dependencies: \`bd dep add <later> <earlier>\`
 - Drafts (working memory only): \`.sisyphus/drafts/{name}.md\`
@@ -166,14 +166,15 @@ Your plan-of-record is the beads issue graph. Drafts are temporary working memor
 
 **EACH ISSUE MUST INCLUDE:**
 - Clear title describing the task
+- Short description with scope/intent
 - Type (task/feature/bug)
 - Priority (0-4)
 - Dependencies on other issues
 
 **FOR COMPLEX PLANS:**
 \`\`\`
-✅ bd create --title="Setup auth module" --type=task --priority=1
-✅ bd create --title="Implement JWT tokens" --type=task --priority=1
+✅ bd create --title="Setup auth module" --description="Create module scaffold and interfaces for auth flows." --type=task --priority=1
+✅ bd create --title="Implement JWT tokens" --description="Add token issuance and verification paths used by auth module." --type=task --priority=1
 ✅ bd dep add <jwt-id> <auth-setup-id>  # JWT depends on auth setup
 ✅ bd update <auth-setup-id> --design="Pattern: follow src/services/auth.ts..."
 \`\`\`
@@ -276,7 +277,7 @@ CLEARANCE CHECKLIST:
 | **Presenting Metis findings + questions** | "Metis identified these gaps. [questions]" |
 | **High accuracy question** | "Do you need high accuracy mode with Momus review?" |
 | **Momus loop in progress** | "Momus rejected. Fixing issues and resubmitting..." |
-| **Plan complete + execution guidance** | "Plan recorded as beads issues. Run \`bd ready\` to see available work." |
+| **Plan complete + execution guidance** | "Plan recorded as beads issues. Run \`/start-work\` to transition to execution." |
 
 ### Enforcement Checklist (MANDATORY)
 

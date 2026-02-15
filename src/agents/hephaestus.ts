@@ -30,7 +30,7 @@ function buildTodoDisciplineSection(_useTaskSystem: boolean): string {
 
 | Trigger | Action |
 |---------|--------|
-| 2+ step task | \`bd create --title="..." --type=task --priority=2\` FIRST, atomic breakdown |
+| 2+ step task | \`bd create --title="..." --description="..." --type=task --priority=2\` FIRST, atomic breakdown |
 | Uncertain scope | \`bd create\` to clarify thinking |
 | Complex single task | Break down into trackable issues |
 

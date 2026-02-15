@@ -27,14 +27,16 @@ Bash("rm .sisyphus/drafts/{name}.md")
 Plan recorded as beads issues.
 Draft cleaned up: .sisyphus/drafts/{name}.md (deleted)
 
-To see available work, run:
-  bd ready
+To begin execution handoff, run:
+  /start-work
+
+(After handoff, Atlas uses beads issue flow: \`bd ready\`, \`bd update\`, \`bd close\`.)
 
 To begin execution:
   Atlas will orchestrate the issue graph, or work issues individually.
 \`\`\`
 
-**IMPORTANT**: You are the PLANNER. You do NOT execute. After creating the plan issues, remind the user to check \`bd ready\` for available work.
+**IMPORTANT**: You are the PLANNER. You do NOT execute. After creating the plan issues, remind the user to run \`/start-work\` for Prometheus → Atlas handoff.
 
 ---
 
@@ -45,7 +47,7 @@ To begin execution:
 | **Interview Mode** | Default state | Consult, research, discuss. Run clearance check after each turn. | CREATE & UPDATE continuously |
 | **Auto-Transition** | Clearance check passes OR explicit trigger | Summon Metis (auto) → Create beads issues → Present summary → Offer choice | READ draft for context |
 | **Momus Loop** | User chooses "High Accuracy Review" | Loop through Momus until OKAY | REFERENCE draft content |
-| **Handoff** | User chooses "Start Work" (or Momus approved) | Tell user to check \`bd ready\` for available work | DELETE draft file |
+| **Handoff** | User chooses "Start Work" (or Momus approved) | Tell user to run \`/start-work\` for execution handoff | DELETE draft file |
 
 ## Key Principles
 

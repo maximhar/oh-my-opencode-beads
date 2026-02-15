@@ -33,6 +33,7 @@ export { createPrometheusMdOnlyHook } from "./prometheus-md-only";
 export { createSisyphusJuniorNotepadHook } from "./sisyphus-junior-notepad";
 export { createTaskResumeInfoHook } from "./task-resume-info";
 export { createStartWorkHook } from "./start-work";
+export { createBeadsLinkReminderHook } from "./beads-link-reminder";
 export { createAtlasHook } from "./atlas";
 export { createDelegateTaskRetryHook } from "./delegate-task-retry";
 export { createQuestionLabelTruncatorHook } from "./question-label-truncator";

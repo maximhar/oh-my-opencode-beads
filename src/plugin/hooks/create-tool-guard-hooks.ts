@@ -9,6 +9,7 @@ import {
   createEmptyTaskResponseDetectorHook,
   createRulesInjectorHook,
   createTasksTodowriteDisablerHook,
+  createBeadsLinkReminderHook,
   createWriteExistingFileGuardHook,
 } from "../../hooks"
 import {
@@ -27,6 +28,7 @@ export type ToolGuardHooks = {
   emptyTaskResponseDetector: ReturnType<typeof createEmptyTaskResponseDetectorHook> | null
   rulesInjector: ReturnType<typeof createRulesInjectorHook> | null
   tasksTodowriteDisabler: ReturnType<typeof createTasksTodowriteDisablerHook> | null
+  beadsLinkReminder: ReturnType<typeof createBeadsLinkReminderHook> | null
   writeExistingFileGuard: ReturnType<typeof createWriteExistingFileGuardHook> | null
 }
 
@@ -81,6 +83,10 @@ export function createToolGuardHooks(args: {
         createTasksTodowriteDisablerHook())
     : null
 
+  const beadsLinkReminder = isHookEnabled("beads-link-reminder")
+    ? safeHook("beads-link-reminder", () => createBeadsLinkReminderHook(ctx))
+    : null
+
   const writeExistingFileGuard = isHookEnabled("write-existing-file-guard")
     ? safeHook("write-existing-file-guard", () => createWriteExistingFileGuardHook(ctx))
     : null
@@ -93,6 +99,7 @@ export function createToolGuardHooks(args: {
     emptyTaskResponseDetector,
     rulesInjector,
     tasksTodowriteDisabler,
+    beadsLinkReminder,
     writeExistingFileGuard,
   }
 }

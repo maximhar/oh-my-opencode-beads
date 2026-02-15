@@ -33,7 +33,7 @@ function buildTaskManagementSection(_useTaskSystem: boolean): string {
 
 ### Workflow (NON-NEGOTIABLE)
 
-1. **IMMEDIATELY on receiving request**: \`bd create --title="..." --type=task --priority=2\` to plan atomic steps.
+1. **IMMEDIATELY on receiving request**: \`bd create --title="..." --description="..." --type=task --priority=2\` to plan atomic steps.
   - ONLY CREATE ISSUES TO IMPLEMENT SOMETHING, ONLY WHEN USER WANTS YOU TO IMPLEMENT SOMETHING.
 2. **Before starting each step**: \`bd update <id> --status in_progress\` (only ONE at a time)
 3. **After completing each step**: \`bd close <id>\` IMMEDIATELY (NEVER batch)

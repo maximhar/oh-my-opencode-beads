@@ -29,7 +29,8 @@ ${todoDiscipline}
 Task NOT complete without:
 - lsp_diagnostics clean on changed files
 - Build passes (if applicable)
-- All beads issues closed (\`bd list --status=open\` returns none for this work)
+- Assigned issue is closed, and any beads issues created during this execution are closed
+- Any beads issues created during execution are linked to assigned issue with \`bd dep add <new> <assigned>\`
 </Verification>
 
 <Style>
@@ -55,11 +56,13 @@ You work ALONE for implementation. No delegation of implementation tasks.
 function buildTodoDisciplineSection(): string {
   return `<Beads_Discipline>
 ISSUE TRACKING WITH BEADS (NON-NEGOTIABLE):
-- 2+ steps → \`bd create --title="..." --type=task --priority=2\` FIRST, atomic breakdown
+- Delegation MUST include ASSIGNED_ISSUE_ID; if missing, stop and request it
+- Before starting, run \`bd show <ASSIGNED_ISSUE_ID>\` to confirm exact scope
+- 2+ steps → \`bd create --title="..." --description="..." --type=task --priority=2\` FIRST, atomic breakdown
 - \`bd update <id> --status in_progress\` before starting (ONE at a time)
 - \`bd close <id>\` IMMEDIATELY after each step
 - NEVER batch closures
-- Use \`bd dep add <issue> <depends-on>\` for dependencies
+- For each newly created issue, immediately run \`bd dep add <new-issue> <ASSIGNED_ISSUE_ID>\`
 
 No beads issues on multi-step work = INCOMPLETE WORK.
 </Beads_Discipline>`
