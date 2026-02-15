@@ -19,6 +19,28 @@ export const PROMETHEUS_PLAN_GENERATION = `# PHASE 2: PLAN GENERATION (Auto-Tran
 
 ## MANDATORY: Register Plan Steps as Beads Issues IMMEDIATELY (NON-NEGOTIABLE)
 
+### Precondition Gate (MANDATORY)
+
+Before registering plan steps, check incomplete epics first:
+1. Run \`bd list --type epic --status=in_progress --json\`.
+2. Run \`bd list --type epic --status=open --json\`.
+3. If either returns epics: ask **NEW plan or CONTINUE existing epic?**
+4. If both are empty: assume **NEW plan** and create parent epic.
+5. If mode is **CONTINUE**: require epic id and validate with \`bd show <epic-id> --json\`.
+6. Do not create child plan issues until this gate is satisfied.
+
+\`\`\`bash
+# Check incomplete epics first
+bd list --type epic --status=in_progress --json
+bd list --type epic --status=open --json
+
+# New plan (when no incomplete epics, or user chooses NEW)
+bd create --title="{plan title}" --description="Parent epic for this plan" --type=epic --priority=1
+
+# Continue existing plan
+bd show <epic-id> --json
+\`\`\`
+
 **The INSTANT you detect a plan generation trigger, you MUST register the following steps as beads issues via bash.**
 
 **This is not optional. This is your first action upon trigger detection.**
@@ -33,8 +55,8 @@ bd create --title="If decisions needed: wait for user, update issues" --descript
 bd create --title="Ask user about high accuracy mode (Momus review)" --description="Offer optional Momus review before final plan handoff." --type=task --priority=1
 bd create --title="If high accuracy: Submit to Momus and iterate until OKAY" --description="Run Momus review loop and apply corrections until approval." --type=task --priority=2
 bd create --title="Clean up draft and guide user to /start-work" --description="Remove draft artifacts and direct user to /start-work for execution handoff." --type=task --priority=2
-# Then add dependencies as needed:
-# bd dep add <later-issue> <earlier-issue>
+# Then declare dependencies inline as needed:
+# bd create --title="..." --type=task --priority=2 --deps parent-child:<epic-id>,blocks:<earlier-issue>
 \`\`\`
 
 **WHY THIS IS CRITICAL:**
@@ -88,7 +110,7 @@ task(
 After receiving Metis's analysis, **DO NOT ask additional questions**. Instead:
 
 1. **Incorporate Metis's findings** silently into your understanding
-2. **Create beads issues immediately** for all plan tasks with dependencies (\`bd create\` + \`bd dep add\`)
+2. **Create beads issues immediately** for all plan tasks with strict parent-child dependencies (inline \`--deps parent-child:<epic-id>\` on every child \`bd create\`)
 3. **Record design context** on the parent issue (\`bd update <id> --design\`)
 4. **Present a summary** of key decisions to the user
 
@@ -108,7 +130,10 @@ After receiving Metis's analysis, **DO NOT ask additional questions**. Instead:
 - [Guardrail 1]
 - [Guardrail 2]
 
-Plan recorded as beads issues. Run \`/start-work\` to transition to execution.
+Plan recorded as beads issues. Run \`/start-work\` to activate the target epic and transition to execution.
+Execution handoff begins with epic discovery via:
+- \`bd list --type epic --status=in_progress --json\`
+- fallback \`bd list --type epic --status=open --json\`
 \`\`\`
 
 ## Post-Plan Self-Review (MANDATORY)
@@ -183,7 +208,10 @@ Before presenting summary, verify:
 **Decisions Needed** (if any):
 - [Question requiring user input]
 
-Plan recorded as beads issues. Run \`/start-work\` to transition to execution.
+Plan recorded as beads issues. Run \`/start-work\` to activate the target epic and transition to execution.
+Execution handoff begins with epic discovery via:
+- \`bd list --type epic --status=in_progress --json\`
+- fallback \`bd list --type epic --status=open --json\`
 \`\`\`
 
 **CRITICAL**: If "Decisions Needed" section exists, wait for user response before presenting final choices.
@@ -200,7 +228,7 @@ Question({
     options: [
       {
         label: "Start Execution",
-        description: "Begin execution now. Plan issues are ready for Atlas to orchestrate."
+        description: "Begin execution now. /start-work will activate the epic and Atlas will orchestrate inside it."
       },
       {
         label: "High Accuracy Review",
@@ -212,8 +240,19 @@ Question({
 \`\`\`
 
 **Based on user choice:**
-- **Start Execution** -> Delete draft and run \`/start-work\` for Prometheus → Atlas handoff
+- **Start Execution** -> Delete draft and run \`/start-work\` for Prometheus → Atlas handoff (starts with in-progress/open epic check)
 - **High Accuracy Review** → Enter Momus loop (PHASE 3)
+
+### Parent-Child Enforcement Checklist (MANDATORY)
+
+Before handoff, confirm all are true:
+
+\`\`\`
+□ Plan mode explicitly captured (NEW or CONTINUE)?
+□ Parent epic exists (created or validated)?
+□ Every non-epic issue includes --deps parent-child:<epic-id> ?
+□ Additional ordering constraints use blocks:<issue-id> only as additive deps?
+\`\`\`
 
 ---
 `

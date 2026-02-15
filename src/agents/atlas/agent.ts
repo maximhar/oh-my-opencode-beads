@@ -1,7 +1,7 @@
 /**
  * Atlas - Master Orchestrator Agent
  *
- * Orchestrates work via task() to complete ALL beads issues until fully done.
+ * Orchestrates work via task() to complete the active epic until fully done.
  * You are the conductor of a symphony of specialized agents.
  *
  * Routing:
@@ -100,7 +100,7 @@ export function createAtlasAgent(ctx: OrchestratorContext): AgentConfig {
 
   const baseConfig = {
     description:
-      "Orchestrates work via task() to complete ALL beads issues until fully done. (Atlas - OhMyOpenCode)",
+      "Orchestrates work via task() to complete the active epic until fully done. (Atlas - OhMyOpenCode)",
     mode: MODE,
     ...(ctx.model ? { model: ctx.model } : {}),
     temperature: 0.1,
@@ -120,7 +120,7 @@ export const atlasPromptMetadata: AgentPromptMetadata = {
   triggers: [
     {
       domain: "Beads issue orchestration",
-      trigger: "Complete ALL beads issues in the issue graph with verification",
+      trigger: "Complete the active epic with verification",
     },
     {
       domain: "Multi-agent coordination",
@@ -138,5 +138,5 @@ export const atlasPromptMetadata: AgentPromptMetadata = {
     "When user wants to execute tasks manually",
   ],
   keyTrigger:
-    "Beads issues provided OR multiple beads issues requiring multi-agent orchestration",
+    "Active epic provided OR multiple epic-scoped issues requiring multi-agent orchestration",
 }

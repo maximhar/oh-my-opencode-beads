@@ -38,17 +38,17 @@ export interface PlanProgress {
 /**
  * Beads-oriented active work state.
  *
- * Tracks which beads issue is currently being worked on in this session,
+ * Tracks which beads epic is currently active for this session,
  * replacing the old plan-file-centric BoulderState for start-work flows.
  */
 export interface ActiveWorkState {
-  /** Beads issue ID currently being worked (e.g., "beads-abc") */
-  active_issue_id: string | null
-  /** Human-readable title of the active issue */
-  active_issue_title: string | null
+  /** Beads epic ID currently active (e.g., "beads-abc") */
+  active_epic_id: string | null
+  /** Human-readable title of the active epic */
+  active_epic_title: string | null
   /** ISO timestamp when the current work session started */
   started_at: string
-  /** Session IDs that have worked on this issue */
+  /** Session IDs that have worked in this active epic */
   session_ids: string[]
   /** Agent type to use (e.g., 'atlas') */
   agent?: string

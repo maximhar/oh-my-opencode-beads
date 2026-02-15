@@ -39,6 +39,7 @@ export function startCountdown(args: {
   backgroundManager?: BackgroundManager
   skipAgents: string[]
   sessionStateStore: SessionStateStore
+  readEpicStatus?: (directory: string, epicId: string) => string | null
 }): void {
   const {
     ctx,
@@ -49,6 +50,7 @@ export function startCountdown(args: {
     backgroundManager,
     skipAgents,
     sessionStateStore,
+    readEpicStatus,
   } = args
 
   const state = sessionStateStore.getState(sessionID)
@@ -75,6 +77,7 @@ export function startCountdown(args: {
       resolvedInfo,
       workItemLabel,
       sessionStateStore,
+      readEpicStatus,
     })
   }, COUNTDOWN_SECONDS * 1000)
 

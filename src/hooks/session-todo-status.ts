@@ -1,5 +1,9 @@
 import type { PluginInput } from "@opencode-ai/plugin"
-import { readActiveWorkState } from "../features/boulder-state"
+import {
+  isActiveEpicStatus,
+  readActiveWorkState,
+  readBeadsIssueStatus,
+} from "../features/boulder-state"
 
 interface Todo {
   content: string
@@ -10,8 +14,9 @@ interface Todo {
 
 export async function hasIncompleteTodos(ctx: PluginInput, sessionID: string): Promise<boolean> {
   const activeWorkState = readActiveWorkState(ctx.directory)
-  if (activeWorkState?.session_ids?.includes(sessionID) && activeWorkState.active_issue_id) {
-    return true
+  if (activeWorkState?.session_ids?.includes(sessionID) && activeWorkState.active_epic_id) {
+    const epicStatus = readBeadsIssueStatus(ctx.directory, activeWorkState.active_epic_id)
+    return isActiveEpicStatus(epicStatus)
   }
 
   try {

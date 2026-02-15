@@ -30,7 +30,7 @@ Task NOT complete without:
 - lsp_diagnostics clean on changed files
 - Build passes (if applicable)
 - Assigned issue is closed, and any beads issues created during this execution are closed
-- Any beads issues created during execution are linked to assigned issue with \`bd dep add <new> <assigned>\`
+- Any beads issues created during execution are linked at creation time (e.g., \`bd create ... --deps parent-child:<ASSIGNED_EPIC_ID>,discovered-from:<ASSIGNED_ISSUE_ID>\`)
 </Verification>
 
 <Style>
@@ -62,7 +62,7 @@ ISSUE TRACKING WITH BEADS (NON-NEGOTIABLE):
 - \`bd update <id> --status in_progress\` before starting (ONE at a time)
 - \`bd close <id>\` IMMEDIATELY after each step
 - NEVER batch closures
-- For each newly created issue, immediately run \`bd dep add <new-issue> <ASSIGNED_ISSUE_ID>\`
+- For each newly created issue, include inline deps at creation: \`bd create ... --deps parent-child:<ASSIGNED_EPIC_ID>,discovered-from:<ASSIGNED_ISSUE_ID>\`
 
 No beads issues on multi-step work = INCOMPLETE WORK.
 </Beads_Discipline>`

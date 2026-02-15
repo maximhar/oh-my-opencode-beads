@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach, spyOn } from "bun:test"
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { randomUUID } from "node:crypto"
@@ -96,8 +96,8 @@ describe("start-work hook", () => {
       )
 
       // then - should show beads discovery instructions
-      expect(output.parts[0].text).toContain("Discover Available Work")
-      expect(output.parts[0].text).toContain("bd ready")
+      expect(output.parts[0].text).toContain("Discover Available Epic")
+      expect(output.parts[0].text).toContain("bd list --type epic --status=in_progress")
       expect(output.parts[0].text).toContain("bd update")
       expect(output.parts[0].text).toContain("bd create")
       // Should NOT reference plan files or boulder.json
@@ -108,8 +108,8 @@ describe("start-work hook", () => {
     test("should inject resume info when existing active work state found", async () => {
       // given - existing active work state
       const state: ActiveWorkState = {
-        active_issue_id: "beads-abc",
-        active_issue_title: "Fix login bug",
+        active_epic_id: "beads-abc",
+        active_epic_title: "Fix login bug",
         started_at: "2026-01-02T10:00:00Z",
         session_ids: ["session-1"],
         agent: "atlas",
@@ -129,7 +129,7 @@ describe("start-work hook", () => {
 
       // then - should show resuming status with beads details
       expect(output.parts[0].text).toContain("Resuming Active Work Session")
-      expect(output.parts[0].text).toContain("beads-abc")
+      expect(output.parts[0].text).toContain("Active Epic")
       expect(output.parts[0].text).toContain("Fix login bug")
       expect(output.parts[0].text).toContain("bd show")
     })
@@ -180,8 +180,8 @@ describe("start-work hook", () => {
       expect(output.parts[0].text).toMatch(/\d{4}-\d{2}-\d{2}T/)
     })
 
-    test("should use explicit issue hint from user-request tag", async () => {
-      // given - user specifies an issue hint
+    test("should use explicit epic hint from user-request tag", async () => {
+      // given - user specifies an epic hint
       const hook = createStartWorkHook(createMockPluginInput())
       const output = {
         parts: [
@@ -200,17 +200,17 @@ describe("start-work hook", () => {
         output
       )
 
-      // then - should reference the issue hint in guidance
-      expect(output.parts[0].text).toContain("Starting Work on Specified Issue")
+      // then - should reference the epic hint in guidance
+      expect(output.parts[0].text).toContain("Starting Work on Specified Epic")
       expect(output.parts[0].text).toContain("beads-xyz")
       expect(output.parts[0].text).toContain("bd show beads-xyz")
     })
 
-    test("should override existing active state when user provides issue hint", async () => {
-      // given - existing active work state AND user provides a new issue hint
+    test("should override existing active state when user provides epic hint", async () => {
+      // given - existing active work state AND user provides a new epic hint
       const existingState: ActiveWorkState = {
-        active_issue_id: "beads-old",
-        active_issue_title: "Old work",
+        active_epic_id: "beads-old",
+        active_epic_title: "Old work",
         started_at: "2026-01-01T10:00:00Z",
         session_ids: ["old-session"],
         agent: "atlas",
@@ -235,18 +235,18 @@ describe("start-work hook", () => {
         output
       )
 
-      // then - should start fresh with new issue, NOT resume old
+      // then - should start fresh with new epic, NOT resume old
       expect(output.parts[0].text).toContain("beads-new")
       expect(output.parts[0].text).not.toContain("Resuming")
       expect(output.parts[0].text).not.toContain("beads-old")
 
       // Active state should be updated
       const updatedState = readActiveWorkState(testDir)
-      expect(updatedState?.active_issue_id).toBe("beads-new")
+      expect(updatedState?.active_epic_id).toBe("beads-new")
     })
 
-    test("should strip ultrawork/ulw keywords from issue hint", async () => {
-      // given - user specifies issue with ultrawork keyword
+    test("should strip ultrawork/ulw keywords from epic hint", async () => {
+      // given - user specifies epic with ultrawork keyword
       const hook = createStartWorkHook(createMockPluginInput())
       const output = {
         parts: [
@@ -267,11 +267,11 @@ describe("start-work hook", () => {
 
       // then - should use cleaned hint without ultrawork
       expect(output.parts[0].text).toContain("fix-auth-bug")
-      expect(output.parts[0].text).toContain("Starting Work on Specified Issue")
+      expect(output.parts[0].text).toContain("Starting Work on Specified Epic")
     })
 
-    test("should strip ulw keyword from issue hint", async () => {
-      // given - user specifies issue with ulw keyword
+    test("should strip ulw keyword from epic hint", async () => {
+      // given - user specifies epic with ulw keyword
       const hook = createStartWorkHook(createMockPluginInput())
       const output = {
         parts: [
@@ -292,7 +292,7 @@ describe("start-work hook", () => {
 
       // then - should use cleaned hint without ulw
       expect(output.parts[0].text).toContain("api-refactor")
-      expect(output.parts[0].text).toContain("Starting Work on Specified Issue")
+      expect(output.parts[0].text).toContain("Starting Work on Specified Epic")
     })
 
     test("should write active work state to disk for beads discovery flow", async () => {
@@ -313,7 +313,7 @@ describe("start-work hook", () => {
       expect(state).not.toBeNull()
       expect(state?.session_ids).toContain("ses-new")
       expect(state?.agent).toBe("atlas")
-      expect(state?.active_issue_id).toBeNull()
+      expect(state?.active_epic_id).toBeNull()
     })
 
     test("should not reference plan files or boulder.json in output", async () => {

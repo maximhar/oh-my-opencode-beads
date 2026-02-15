@@ -162,7 +162,7 @@ The legacy approach used `.sisyphus/plans/*.md` files and `boulder.json` for sta
 | Aspect | Legacy Plan Files | Beads |
 |--------|------------------|-------|
 | **State** | `boulder.json` (fragile) | `.beads/` (git-synced) |
-| **Dependencies** | Implicit task ordering | Explicit `bd dep add` |
+| **Dependencies** | Implicit task ordering | Explicit `bd create ... --deps ...` |
 | **Resumability** | `/start-work` reads boulder | `bd ready` shows unblocked work |
 | **Visibility** | Read plan file manually | `bd ready`, `bd blocked`, `bd stats` |
 | **Granularity** | Monolithic plan | Individual issues with metadata |
@@ -189,11 +189,8 @@ flowchart LR
 ```bash
 bd create --title="Build frontend"    --type=task    # beads-001
 bd create --title="Build backend"     --type=task    # beads-002
-bd create --title="Integration tests" --type=task    # beads-003
-bd create --title="Deploy"            --type=task    # beads-004
-bd dep add beads-003 beads-001   # tests depend on frontend
-bd dep add beads-003 beads-002   # tests depend on backend
-bd dep add beads-004 beads-003   # deploy depends on tests
+bd create --title="Integration tests" --type=task --deps blocks:beads-001,blocks:beads-002    # beads-003
+bd create --title="Deploy"            --type=task --deps blocks:beads-003                       # beads-004
 ```
 
 ---

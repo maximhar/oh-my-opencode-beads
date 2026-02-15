@@ -1,7 +1,12 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 
 import type { BackgroundManager } from "../../features/background-agent"
-import { readActiveWorkState } from "../../features/boulder-state"
+import {
+  isActiveEpicStatus,
+  isClosedEpicStatus,
+  readActiveWorkState,
+  readBeadsIssueStatus,
+} from "../../features/boulder-state"
 import type { ToolPermission } from "../../features/hook-message-injector"
 import { log } from "../../shared/logger"
 
@@ -23,6 +28,7 @@ export async function handleSessionIdle(args: {
   backgroundManager?: BackgroundManager
   skipAgents?: string[]
   isContinuationStopped?: (sessionID: string) => boolean
+  readEpicStatus?: (directory: string, epicId: string) => string | null
 }): Promise<void> {
   const {
     ctx,
@@ -31,7 +37,10 @@ export async function handleSessionIdle(args: {
     backgroundManager,
     skipAgents = DEFAULT_SKIP_AGENTS,
     isContinuationStopped,
+    readEpicStatus,
   } = args
+
+  const resolveEpicStatus = readEpicStatus ?? readBeadsIssueStatus
 
   log(`[${HOOK_NAME}] session.idle`, { sessionID })
 
@@ -79,8 +88,24 @@ export async function handleSessionIdle(args: {
   let total = 0
 
   const activeWorkState = readActiveWorkState(ctx.directory)
-  if (activeWorkState?.session_ids?.includes(sessionID) && activeWorkState.active_issue_id) {
-    workItemLabel = activeWorkState.active_issue_title ?? activeWorkState.active_issue_id
+  if (activeWorkState?.session_ids?.includes(sessionID) && activeWorkState.active_epic_id) {
+    const epicStatus = resolveEpicStatus(ctx.directory, activeWorkState.active_epic_id)
+    if (isClosedEpicStatus(epicStatus)) {
+      log(`[${HOOK_NAME}] Active epic is closed`, {
+        sessionID,
+        epicID: activeWorkState.active_epic_id,
+      })
+      return
+    }
+    if (!isActiveEpicStatus(epicStatus)) {
+      log(`[${HOOK_NAME}] Active epic status unknown; skipping continuation`, {
+        sessionID,
+        epicID: activeWorkState.active_epic_id,
+        epicStatus,
+      })
+      return
+    }
+    workItemLabel = activeWorkState.active_epic_title ?? activeWorkState.active_epic_id
     incompleteCount = 1
     total = 1
   } else {
@@ -158,15 +183,16 @@ export async function handleSessionIdle(args: {
     return
   }
 
-  startCountdown({
-    ctx,
-    sessionID,
-    incompleteCount,
-    total,
-    workItemLabel,
-    resolvedInfo,
-    backgroundManager,
-    skipAgents,
-    sessionStateStore,
-  })
+    startCountdown({
+      ctx,
+      sessionID,
+      incompleteCount,
+      total,
+      workItemLabel,
+      resolvedInfo,
+      backgroundManager,
+      skipAgents,
+      sessionStateStore,
+      readEpicStatus: resolveEpicStatus,
+    })
 }

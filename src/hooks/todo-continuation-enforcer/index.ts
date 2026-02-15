@@ -17,6 +17,7 @@ export function createTodoContinuationEnforcer(
     backgroundManager,
     skipAgents = DEFAULT_SKIP_AGENTS,
     isContinuationStopped,
+    readEpicStatus,
   } = options
 
   const sessionStateStore = createSessionStateStore()
@@ -42,6 +43,7 @@ export function createTodoContinuationEnforcer(
     backgroundManager,
     skipAgents,
     isContinuationStopped,
+    readEpicStatus,
   })
 
   const cancelAllCountdowns = (): void => {

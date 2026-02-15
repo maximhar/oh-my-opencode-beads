@@ -109,9 +109,7 @@ Monday 2:00 PM (NEW SESSION)
 ```bash
 bd create --title="Build frontend"  --type=task      # beads-001
 bd create --title="Build backend"   --type=task      # beads-002
-bd create --title="Integration tests" --type=task    # beads-003
-bd dep add beads-003 beads-001   # tests depend on frontend
-bd dep add beads-003 beads-002   # tests depend on backend
+bd create --title="Integration tests" --type=task --deps blocks:beads-001,blocks:beads-002  # beads-003
 
 bd ready          # Shows beads-001, beads-002 (no blockers)
 bd blocked        # Shows beads-003 (blocked by 001, 002)
@@ -122,7 +120,7 @@ bd blocked        # Shows beads-003 (blocked by 001, 002)
 | Aspect | Legacy Plan Files | Beads |
 |--------|------------------|-------|
 | **Persistence** | `.sisyphus/plans/*.md` + `boulder.json` | `.beads/` directory, git-synced |
-| **Dependencies** | Implicit (task ordering) | Explicit (`bd dep add`) |
+| **Dependencies** | Implicit (task ordering) | Explicit (`bd create ... --deps ...`) |
 | **Cross-session** | `boulder.json` state | Issue status persists naturally |
 | **Visibility** | Read plan file manually | `bd ready`, `bd blocked`, `bd stats` |
 | **Granularity** | Monolithic plan file | Individual trackable issues |
@@ -292,7 +290,7 @@ Prometheus starts in **interview mode** by default. Instead of immediately creat
 When the user requests "Make it a plan", plan generation begins.
 
 1. **Metis Consultation**: Confirms any missed requirements or risk factors.
-2. **Plan Creation**: Writes a plan document and decomposes work into beads issues via `bd create`, with dependencies established via `bd dep add`.
+2. **Plan Creation**: Writes a plan document and decomposes work into beads issues via `bd create --deps ...` for inline dependency wiring.
 3. **Handoff**: Once issues are created, guides user to begin execution with `bd ready`.
 
 ### Phase 3: Execution
@@ -372,7 +370,7 @@ You can control related features in `oh-my-opencode.json`.
 
 2. **Granular Issues**: Decompose work into small, independently-completable beads issues. Each issue should be achievable in a single focused session.
 
-3. **Use Dependencies**: Establish `bd dep add` relationships to ensure correct execution order. `bd ready` automatically surfaces unblocked work.
+3. **Use Dependencies**: Declare dependencies inline with `bd create --deps ...` to ensure correct execution order. `bd ready` automatically surfaces unblocked work.
 
 4. **Trust Beads Continuity**: Don't worry about session interruptions. `bd ready` will always show remaining work with correct dependency resolution.
 

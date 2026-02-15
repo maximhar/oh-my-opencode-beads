@@ -15,7 +15,7 @@ Beads provides a git-synced issue graph with full dependency tracking. Issues pe
 | `bd show <id>` | View issue details and dependencies |
 | `bd update <id> --status in_progress` | Claim work |
 | `bd close <id>` | Mark issue complete |
-| `bd dep add <issue> <depends-on>` | Add dependency |
+| `bd create --title="..." --type=task --deps blocks:<depends-on>` | Create issue with dependency |
 | `bd blocked` | Show all blocked issues |
 | `bd stats` | Project statistics |
 | `bd sync` | Sync with git |
@@ -29,7 +29,7 @@ Issues support these fields:
 - **type**: `task`, `bug`, `feature`
 - **priority**: 0–4 (0=critical, 4=backlog)
 - **status**: `open`, `in_progress`, `closed`
-- **dependencies**: Explicit via `bd dep add`
+- **dependencies**: Explicit via `bd create --deps ...`
 - **notes/design/description**: Rich metadata
 
 ### Dependencies and Execution Order
@@ -48,9 +48,7 @@ Issues support these fields:
 ```bash
 bd create --title="Build frontend" --type=task         # beads-001
 bd create --title="Build backend" --type=task          # beads-002
-bd create --title="Run integration tests" --type=task  # beads-003
-bd dep add beads-003 beads-001   # tests depend on frontend
-bd dep add beads-003 beads-002   # tests depend on backend
+bd create --title="Run integration tests" --type=task --deps blocks:beads-001,blocks:beads-002  # beads-003
 ```
 
 ```bash

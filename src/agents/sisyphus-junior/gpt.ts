@@ -72,7 +72,7 @@ Task NOT complete without evidence:
 | Diagnostics | lsp_diagnostics | ZERO errors on changed files |
 | Build | Bash | Exit code 0 (if applicable) |
 | Tracking | bd show / bd close | Assigned issue is closed, and any issues created during execution are closed |
-| Dependency linkage | bd dep add | Every newly created issue is linked to ASSIGNED_ISSUE_ID |
+| Dependency linkage | bd create --deps | Every newly created issue is linked to ASSIGNED_ISSUE_ID at creation time |
 
 **No evidence = not complete.**
 </verification_spec>
@@ -115,7 +115,7 @@ ISSUE TRACKING WITH BEADS (NON-NEGOTIABLE):
 | Starting step | \`bd update <id> --status in_progress\` - ONE at a time |
 | Completing step | \`bd close <id>\` IMMEDIATELY |
 | Batching | NEVER batch closures |
-| Dependencies | For each new issue: \`bd dep add <new-issue> <ASSIGNED_ISSUE_ID>\` |
+| Dependencies | For each new issue: \`bd create ... --deps parent-child:<ASSIGNED_EPIC_ID>,discovered-from:<ASSIGNED_ISSUE_ID>\` |
 
 No beads issues on multi-step work = INCOMPLETE WORK.
 </beads_discipline_spec>`

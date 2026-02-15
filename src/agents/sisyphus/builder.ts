@@ -33,18 +33,33 @@ function buildTaskManagementSection(_useTaskSystem: boolean): string {
 
 ### Workflow (NON-NEGOTIABLE)
 
+**Core execution loop (MANDATORY): Think -> Create -> Act**
+- **Think**: Use \`bd ready --json\` as source-of-truth before choosing work
+- **Create**: File discovered follow-up work immediately (especially anything >2 minutes)
+- **Act**: Execute one claimed issue at a time, then close it before moving on
+
 1. **IMMEDIATELY on receiving request**: \`bd create --title="..." --description="..." --type=task --priority=2\` to plan atomic steps.
   - ONLY CREATE ISSUES TO IMPLEMENT SOMETHING, ONLY WHEN USER WANTS YOU TO IMPLEMENT SOMETHING.
-2. **Before starting each step**: \`bd update <id> --status in_progress\` (only ONE at a time)
-3. **After completing each step**: \`bd close <id>\` IMMEDIATELY (NEVER batch)
-4. **If scope changes**: Create/update issues before proceeding
-5. **If issues depend on each other**: \`bd dep add <issue> <depends-on>\`
+2. **Before execution**: Ensure there is one active epic (use \`/start-work\` when needed); execute only issues inside that active epic.
+3. **Before starting each step**: \`bd update <id> --status in_progress\` (only ONE at a time)
+4. **After completing each step**: \`bd close <id>\` IMMEDIATELY (NEVER batch)
+5. **If scope changes**: Create/update issues before proceeding
+6. **When linking dependencies, choose correct relation type**:
+  - \`blocks\`: hard prerequisite (affects ready)
+  - \`parent-child\`: decomposition hierarchy (affects ready)
+  - \`related\`: context only
+  - \`discovered-from\`: provenance for newly found work
+
+### Session Bookends (MANDATORY)
+
+- **Session start**: \`bd ready --json\` -> \`bd show <epic-or-issue-id>\` -> \`bd update <id> --status in_progress\`
+- **Session end**: \`bd close <id>\` for completed work -> \`bd sync\` -> land the plane and ensure push when finishing the session
 
 ### Why This Is Non-Negotiable
 
 - **Persistence**: Issues survive session boundaries and context loss
 - **Prevents drift**: Issues anchor you to the actual request
-- **Recovery**: If interrupted, \`bd ready\` shows what to work on next
+- **Recovery**: If interrupted, \`bd ready --json\` + active epic context shows what to work on next
 - **Accountability**: Each issue = explicit commitment
 - **Dependency tracking**: \`bd blocked\` reveals what is waiting on what
 

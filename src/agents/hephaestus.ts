@@ -40,7 +40,7 @@ function buildTodoDisciplineSection(_useTaskSystem: boolean): string {
 2. **Before each step**: \`bd update <id> --status in_progress\` (ONE at a time)
 3. **After each step**: \`bd close <id>\` IMMEDIATELY (NEVER batch)
 4. **Scope changes**: Create/update issues BEFORE proceeding
-5. **Dependencies**: \`bd dep add <issue> <depends-on>\` when issues block each other
+5. **Dependencies**: declare inline when creating: \`bd create ... --deps blocks:<depends-on>\` when issues block each other
 
 ### Why This Matters
 

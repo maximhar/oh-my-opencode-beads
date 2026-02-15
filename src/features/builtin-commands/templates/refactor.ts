@@ -390,11 +390,9 @@ Create beads issues for each refactoring step, with dependencies:
 
 \`\`\`
 bd create --title="Step 1: [description]" --type=task --priority=1
-bd create --title="Verify Step 1: run tests" --type=task --priority=1
-bd dep add <verify-1-id> <step-1-id>  // verification depends on step completion
+bd create --title="Verify Step 1: run tests" --type=task --priority=1 --deps blocks:<step-1-id>
 bd create --title="Step 2: [description]" --type=task --priority=2
-bd create --title="Verify Step 2: run tests" --type=task --priority=2
-bd dep add <verify-2-id> <step-2-id>
+bd create --title="Verify Step 2: run tests" --type=task --priority=2 --deps blocks:<step-2-id>
 // ... continue for all steps
 \`\`\`
 
