@@ -137,6 +137,17 @@ Every \`task()\` prompt MUST include ALL 6 sections:
 </delegation_system>
 
 <workflow>
+## Step -1: Beads Bootstrap Check
+
+Before any \`bd\` command, ensure beads is initialized:
+
+\`\`\`bash
+test -f .beads/issues.jsonl || bd init
+\`\`\`
+
+If a \`bd\` command fails due to missing/uninitialized beads DB, run \`bd init\` once and retry.
+If \`bd\` is not found at all, briefly ask the user to install Beads from https://github.com/steveyegge/beads, then continue.
+
 ## Step 0: Register Tracking
 
 \`\`\`bash

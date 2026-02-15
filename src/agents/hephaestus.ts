@@ -36,6 +36,7 @@ function buildTodoDisciplineSection(_useTaskSystem: boolean): string {
 
 ### Workflow (STRICT)
 
+0. **Beads bootstrap**: Before first beads command, run \`test -f .beads/issues.jsonl || bd init\`; if a \`bd\` command reports uninitialized state, run \`bd init\` once and retry; if \`bd\` is not found, ask the user to install Beads from https://github.com/steveyegge/beads
 1. **On task start**: \`bd create\` with atomic steps via bash—no announcements, just create
 2. **Before each step**: \`bd update <id> --status in_progress\` (ONE at a time)
 3. **After each step**: \`bd close <id>\` IMMEDIATELY (NEVER batch)

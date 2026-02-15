@@ -22,15 +22,19 @@ export const PROMETHEUS_PLAN_GENERATION = `# PHASE 2: PLAN GENERATION (Auto-Tran
 ### Precondition Gate (MANDATORY)
 
 Before registering plan steps, check incomplete epics first:
-1. Run \`bd list --type epic --status=in_progress --json\`.
-2. Run \`bd list --type epic --status=open --json\`.
-3. If either returns epics: ask **NEW plan or CONTINUE existing epic?**
-4. If both are empty: assume **NEW plan** and create parent epic.
-5. If mode is **CONTINUE**: require epic id and validate with \`bd show <epic-id> --json\`.
-6. Do not create child plan issues until this gate is satisfied.
+1. Ensure beads is initialized: \`test -f .beads/issues.jsonl || bd init\`.
+2. If a \`bd\` command reports uninitialized beads DB, run \`bd init\` once and retry.
+3. If \`bd\` is not found, ask the user to install Beads from https://github.com/steveyegge/beads.
+4. Run \`bd list --type epic --status=in_progress --json\`.
+5. Run \`bd list --type epic --status=open --json\`.
+6. If either returns epics: ask **NEW plan or CONTINUE existing epic?**
+7. If both are empty: assume **NEW plan** and create parent epic.
+8. If mode is **CONTINUE**: require epic id and validate with \`bd show <epic-id> --json\`.
+9. Do not create child plan issues until this gate is satisfied.
 
 \`\`\`bash
 # Check incomplete epics first
+test -f .beads/issues.jsonl || bd init
 bd list --type epic --status=in_progress --json
 bd list --type epic --status=open --json
 
