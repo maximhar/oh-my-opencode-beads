@@ -8,32 +8,18 @@ export const START_WORK_TEMPLATE = `You are starting a beads-driven work session
 
 3. **Decision logic**:
    - If there are in-progress issues:
-     - Resume work on the first in-progress issue
-   - If no in-progress issues but ready issues exist:
-     - If ONE ready issue: auto-select it
-     - If MULTIPLE ready issues: show list with priorities, ask user to select
+      - Resume work on the first in-progress issue
+   - Otherwise, if ready issues exist:
+      - Auto-select one ready issue (highest priority first, then oldest created)
    - If no ready issues:
-     - Check \`bd blocked --json\` for blocked work
-     - Report status and ask user what to create or unblock
+      - Check \`bd blocked --json\` for blocked work
+      - Report status and suggest the next unblock/create action
 
 4. **Claim work**: Run \`bd update <id> --status=in_progress\` to claim the selected issue
 
 5. **Read issue details** with \`bd show <id> --json\` and start executing the work
 
 ## OUTPUT FORMAT
-
-When listing issues for selection:
-\`\`\`
-Available Work (beads ready)
-
-Current Time: {ISO timestamp}
-Session ID: {current session id}
-
-1. [{issue-id}] P{priority} - {title}
-2. [{issue-id}] P{priority} - {title}
-
-Which issue would you like to work on? (Enter number or issue ID)
-\`\`\`
 
 When resuming in-progress work:
 \`\`\`
