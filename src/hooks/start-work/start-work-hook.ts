@@ -42,6 +42,7 @@ interface BeadsIssue {
   title?: string
   status?: string
   type?: string
+  issue_type?: string
 }
 
 interface NoHintEpicResolution {
@@ -59,6 +60,20 @@ function runBdJson(directory: string, args: string[]): unknown {
   return JSON.parse(rawOutput)
 }
 
+function normalizeBdShowResult(parsed: unknown): BeadsIssue | null {
+  const normalized = Array.isArray(parsed) ? parsed[0] : parsed
+  if (!normalized || typeof normalized !== "object" || Array.isArray(normalized)) {
+    return null
+  }
+  const asIssue = normalized as BeadsIssue
+  return typeof asIssue.id === "string" ? asIssue : null
+}
+
+function isEpicIssue(issue: BeadsIssue): boolean {
+  const issueType = issue.type ?? issue.issue_type
+  return !issueType || issueType === "epic"
+}
+
 function readEpicList(directory: string, status?: "open" | "in_progress"): BeadsIssue[] {
   try {
     const args = status ? ["list", "--type", "epic", "--status", status] : ["list", "--type", "epic"]
@@ -73,10 +88,9 @@ function readEpicList(directory: string, status?: "open" | "in_progress"): Beads
 function readEpicByHint(directory: string, hint: string): BeadsIssue | null {
   try {
     const parsed = runBdJson(directory, ["show", hint])
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null
-    const asIssue = parsed as BeadsIssue
-    if (typeof asIssue.id !== "string") return null
-    if (asIssue.type && asIssue.type !== "epic") return null
+    const asIssue = normalizeBdShowResult(parsed)
+    if (!asIssue) return null
+    if (!isEpicIssue(asIssue)) return null
     return asIssue
   } catch {
     const allEpics = readEpicList(directory)
@@ -99,11 +113,10 @@ function readEpicByHint(directory: string, hint: string): BeadsIssue | null {
 function readEpicById(directory: string, epicId: string): BeadsIssue | null {
   try {
     const parsed = runBdJson(directory, ["show", epicId])
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null
-    const asIssue = parsed as BeadsIssue
-    if (typeof asIssue.id !== "string") return null
+    const asIssue = normalizeBdShowResult(parsed)
+    if (!asIssue) return null
     if (asIssue.id !== epicId) return null
-    if (asIssue.type && asIssue.type !== "epic") return null
+    if (!isEpicIssue(asIssue)) return null
     return asIssue
   } catch {
     return null

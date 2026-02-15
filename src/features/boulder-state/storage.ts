@@ -284,10 +284,15 @@ export function readBeadsIssueStatus(directory: string, issueId: string): string
       stdio: ["ignore", "pipe", "ignore"],
     })
     const parsed = JSON.parse(rawOutput)
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    const normalized = Array.isArray(parsed) ? parsed[0] : parsed
+
+    if (!normalized || typeof normalized !== "object" || Array.isArray(normalized)) {
       return null
     }
-    return typeof parsed.status === "string" ? parsed.status : null
+    if (typeof normalized.status !== "string") {
+      return null
+    }
+    return normalized.status
   } catch {
     return null
   }
