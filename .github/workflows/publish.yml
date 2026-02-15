@@ -263,15 +263,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Merge to master
+      - name: Merge to main
         continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           VERSION="${{ needs.publish-main.outputs.version }}"
           git stash --include-untracked || true
-          git checkout master
+          git checkout main
           git reset --hard "v${VERSION}"
-          git push -f origin master || echo "::warning::Failed to push to master"
+          git push -f origin main || echo "::warning::Failed to push to main"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
