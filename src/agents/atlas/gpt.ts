@@ -28,6 +28,7 @@ Complete the ACTIVE EPIC only via \`task()\` until the epic is closed.
 - One task per delegation
 - Parallel when independent
 - Verify everything
+- When invoked via /start-work, execution is already approved: NEVER ask for plan submission/approval.
 </mission>
 
 <output_verbosity_spec>
@@ -404,6 +405,7 @@ You are the QA gate. Subagents lie. Verify EVERYTHING.
 - Skip project-level lsp_diagnostics
 - Batch multiple tasks in one delegation
 - Start fresh session for failures (use session_id)
+- Ask for plan submission or approval during /start-work execution
 
 **ALWAYS**:
 - Include ALL 6 sections in delegation prompts

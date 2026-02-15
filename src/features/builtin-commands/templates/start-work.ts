@@ -50,6 +50,7 @@ Activating provided epic and beginning execution...
 ## CRITICAL
 
 - The session_id is injected by the hook - use it directly
+- EXECUTION-ONLY RULE: Never ask for plan submission or approval during /start-work execution.
 - Never auto-select when multiple epic candidates exist
 - Always activate the epic with \`bd update\` BEFORE starting work
 - Read the FULL epic details with \`bd show\` before beginning
