@@ -13,7 +13,7 @@ export const START_WORK_TEMPLATE = `You are starting a beads-driven work session
       - Auto-select one ready issue (highest priority first, then oldest created)
    - If no ready issues:
       - Check \`bd blocked --json\` for blocked work
-      - Report status and suggest the next unblock/create action
+      - Continue execution by resolving blockers (resolve or create/claim prerequisite work)
 
 4. **Claim work**: Run \`bd update <id> --status=in_progress\` to claim the selected issue
 
