@@ -44,6 +44,12 @@ interface BeadsIssue {
   type?: string
 }
 
+interface NoHintEpicResolution {
+  kind: "single" | "multiple" | "none"
+  epic?: BeadsIssue
+  epics?: BeadsIssue[]
+}
+
 function runBdJson(directory: string, args: string[]): unknown {
   const rawOutput = execFileSync("bd", [...args, "--json"], {
     cwd: directory,
@@ -79,18 +85,49 @@ function readEpicByHint(directory: string, hint: string): BeadsIssue | null {
   }
 }
 
-function selectActiveEpic(directory: string): BeadsIssue | null {
+function readEpicById(directory: string, epicId: string): BeadsIssue | null {
+  try {
+    const parsed = runBdJson(directory, ["show", epicId])
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null
+    const asIssue = parsed as BeadsIssue
+    if (typeof asIssue.id !== "string") return null
+    if (asIssue.id !== epicId) return null
+    if (asIssue.type && asIssue.type !== "epic") return null
+    return asIssue
+  } catch {
+    return null
+  }
+}
+
+function resolveNoHintEpic(directory: string): NoHintEpicResolution {
   const inProgressEpics = readEpicList(directory, "in_progress")
-  if (inProgressEpics.length > 0) {
-    return inProgressEpics[0]
-  }
-
   const openEpics = readEpicList(directory, "open")
-  if (openEpics.length > 0) {
-    return openEpics[0]
+
+  const byId = new Map<string, BeadsIssue>()
+  for (const epic of [...inProgressEpics, ...openEpics]) {
+    if (!byId.has(epic.id)) {
+      byId.set(epic.id, epic)
+    }
   }
 
-  return null
+  const candidates = Array.from(byId.values())
+  if (candidates.length === 1) {
+    return { kind: "single", epic: candidates[0] }
+  }
+  if (candidates.length > 1) {
+    return { kind: "multiple", epics: candidates }
+  }
+  return { kind: "none" }
+}
+
+function formatEpicList(epics: BeadsIssue[]): string {
+  return epics
+    .map((epic, index) => {
+      const title = epic.title ? ` – ${epic.title}` : ""
+      const status = epic.status ? ` (${epic.status})` : ""
+      return `${index + 1}. ${epic.id}${title}${status}`
+    })
+    .join("\n")
 }
 
 export function createStartWorkHook(ctx: PluginInput) {
@@ -128,77 +165,125 @@ export function createStartWorkHook(ctx: PluginInput) {
       const existingState = readActiveWorkState(ctx.directory)
 
       if (existingState && !epicHint) {
-        // Resume existing active work session
-        appendActiveWorkSessionId(ctx.directory, sessionId)
-        const epicLabel = existingState.active_epic_id
-          ? `${existingState.active_epic_id}${existingState.active_epic_title ? ` – ${existingState.active_epic_title}` : ""}`
-          : "unknown"
+        const existingEpic = existingState.active_epic_id
+          ? readEpicById(ctx.directory, existingState.active_epic_id)
+          : null
 
-        contextInfo = `
+        if (existingEpic) {
+          appendActiveWorkSessionId(ctx.directory, sessionId)
+          const epicLabel = `${existingEpic.id}${existingEpic.title ? ` – ${existingEpic.title}` : ""}`
+
+          contextInfo = `
 ## Resuming Active Work Session
 
 **Active Epic**: ${epicLabel}
 **Sessions**: ${existingState.session_ids.length + 1} (current session appended)
 **Started**: ${existingState.started_at}
 
-Run \`bd show ${existingState.active_epic_id || "<epic-id>"}\` to review the epic, then continue working.
-Check progress with \`bd show ${existingState.active_epic_id || "<epic-id>"} --json\`.
+Run \`bd show ${existingEpic.id}\` to review the epic, then continue working.
+Check progress with \`bd show ${existingEpic.id} --json\`.
 Choose work only from this active epic.`
+        } else {
+          const noHintResolution = resolveNoHintEpic(ctx.directory)
+          if (noHintResolution.kind === "single" && noHintResolution.epic) {
+            const resolvedEpic = noHintResolution.epic
+            const newState = createActiveWorkState(sessionId, resolvedEpic.id, resolvedEpic.title ?? null, "atlas")
+            writeActiveWorkState(ctx.directory, newState)
+
+            contextInfo = `
+## Starting Work Session
+
+**Active Epic**: ${resolvedEpic.id}${resolvedEpic.title ? ` – ${resolvedEpic.title}` : ""}
+**Session ID**: ${sessionId}
+**Started**: ${timestamp}
+
+Auto-resolved because exactly one open/in-progress epic exists.
+1. Run \`bd show ${resolvedEpic.id} --json\`.
+2. If status is \`open\`, activate it: \`bd update ${resolvedEpic.id} --status in_progress\`.
+3. Run \`bd ready --json\` and execute the next ready issue inside this epic.`
+          } else if (noHintResolution.kind === "multiple" && noHintResolution.epics) {
+            contextInfo = `
+## Cannot Start Work
+
+Multiple open/in-progress epics were found. Do not choose one automatically.
+
+Request the user to select one epic from this list and re-run \`/start-work <beads-epic-id>\`:
+${formatEpicList(noHintResolution.epics)}`
+          } else {
+            contextInfo = `
+## Cannot Start Work
+
+No open/in-progress epic was resolved for this session.
+
+Do not start implementation.
+Ask the user to run \`/start-work <beads-epic-id>\` with a valid epic id.`
+          }
+        }
       } else if (epicHint) {
         const hintedEpic = readEpicByHint(ctx.directory, epicHint)
-        const resolvedEpicId = hintedEpic?.id ?? epicHint
-        const resolvedEpicTitle = hintedEpic?.title ?? null
-        const newState = createActiveWorkState(sessionId, resolvedEpicId, resolvedEpicTitle, "atlas")
-        writeActiveWorkState(ctx.directory, newState)
+        if (!hintedEpic) {
+          contextInfo = `
+## Cannot Start Work
 
-        contextInfo = `
+Failed to resolve epic hint to a valid beads epic id.
+
+**Epic hint**: ${epicHint}
+
+Do not start implementation.
+Ask the user to re-run with a valid epic id, for example:
+\`/start-work beads-123\``
+        } else {
+          const newState = createActiveWorkState(sessionId, hintedEpic.id, hintedEpic.title ?? null, "atlas")
+          writeActiveWorkState(ctx.directory, newState)
+
+          contextInfo = `
 ## Starting Work on Specified Epic
 
 **Epic hint**: ${epicHint}
-**Active Epic**: ${resolvedEpicId}${resolvedEpicTitle ? ` – ${resolvedEpicTitle}` : ""}
+**Active Epic**: ${hintedEpic.id}${hintedEpic.title ? ` – ${hintedEpic.title}` : ""}
 **Session ID**: ${sessionId}
 **Started**: ${timestamp}
 
 Resolve and activate the epic:
-1. Run \`bd show ${resolvedEpicId} --json\` to confirm this epic.
-2. If status is \`open\`, mark it active: \`bd update ${resolvedEpicId} --status in_progress\`.
-3. Run \`bd ready\` and pick the next ready issue inside this epic.
+1. Run \`bd show ${hintedEpic.id} --json\` to confirm this epic.
+2. If status is \`open\`, mark it active: \`bd update ${hintedEpic.id} --status in_progress\`.
+3. Run \`bd ready --json\` and pick the next ready issue inside this epic.
 4. Begin implementation.`
+        }
       } else {
-        const selectedEpic = selectActiveEpic(ctx.directory)
-        if (selectedEpic) {
-          const newState = createActiveWorkState(sessionId, selectedEpic.id, selectedEpic.title ?? null, "atlas")
+        const noHintResolution = resolveNoHintEpic(ctx.directory)
+        if (noHintResolution.kind === "single" && noHintResolution.epic) {
+          const resolvedEpic = noHintResolution.epic
+          const newState = createActiveWorkState(sessionId, resolvedEpic.id, resolvedEpic.title ?? null, "atlas")
           writeActiveWorkState(ctx.directory, newState)
 
           contextInfo = `
 ## Starting Work Session
 
-**Active Epic**: ${selectedEpic.id}${selectedEpic.title ? ` – ${selectedEpic.title}` : ""}
+**Active Epic**: ${resolvedEpic.id}${resolvedEpic.title ? ` – ${resolvedEpic.title}` : ""}
 **Session ID**: ${sessionId}
 **Started**: ${timestamp}
 
-Epic selected automatically:
-1. Run \`bd show ${selectedEpic.id} --json\`.
-2. If needed, activate it with \`bd update ${selectedEpic.id} --status in_progress\`.
-3. Run \`bd ready\` and execute the next ready issue from this epic.
-4. Continue until the epic is closed.`
-        } else {
-          const newState = createActiveWorkState(sessionId, null, null, "atlas")
-          writeActiveWorkState(ctx.directory, newState)
-
+Auto-resolved because exactly one open/in-progress epic exists.
+1. Run \`bd show ${resolvedEpic.id} --json\`.
+2. If status is \`open\`, activate it: \`bd update ${resolvedEpic.id} --status in_progress\`.
+3. Run \`bd ready --json\` and execute the next ready issue inside this epic.`
+        } else if (noHintResolution.kind === "multiple" && noHintResolution.epics) {
           contextInfo = `
-## Discover Available Epic
+## Cannot Start Work
 
-**Session ID**: ${sessionId}
-**Started**: ${timestamp}
+Multiple open/in-progress epics were found. Do not choose one automatically.
 
-No active epic found. Initialize one deterministically:
+Request the user to select one epic from this list and re-run \`/start-work <beads-epic-id>\`:
+${formatEpicList(noHintResolution.epics)}`
+        } else {
+          contextInfo = `
+## Cannot Start Work
 
-1. Run \`bd list --type epic --status=in_progress\`.
-2. If empty, run \`bd list --type epic --status=open\`.
-3. If still empty, create one now: \`bd create --title="New execution epic" --description="Execution scope" --type=epic --priority=1\`.
-4. Set epic active: \`bd update <epic-id> --status in_progress\`.
-5. Re-run \`/start-work\` to persist this active epic.`
+No open/in-progress epic was resolved for this session.
+
+Do not start implementation.
+Ask the user to run \`/start-work <beads-epic-id>\` with a valid epic id.`
         }
       }
 
