@@ -81,7 +81,18 @@ function readEpicByHint(directory: string, hint: string): BeadsIssue | null {
   } catch {
     const allEpics = readEpicList(directory)
     const loweredHint = hint.toLowerCase()
-    return allEpics.find((epic) => epic.id === hint || epic.title?.toLowerCase().includes(loweredHint)) ?? null
+
+    const fuzzyMatches = allEpics.filter((epic) => {
+      const id = epic.id.toLowerCase()
+      const title = epic.title?.toLowerCase() ?? ""
+      return (
+        epic.id === hint ||
+        id.includes(loweredHint) ||
+        title.includes(loweredHint)
+      )
+    })
+
+    return fuzzyMatches.length === 1 ? fuzzyMatches[0] : null
   }
 }
 
