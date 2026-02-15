@@ -33,6 +33,11 @@ function buildTaskManagementSection(_useTaskSystem: boolean): string {
 
 ### Workflow (NON-NEGOTIABLE)
 
+**Beads bootstrap (MANDATORY)**
+- Before first beads command, run: \`test -f .beads/issues.jsonl || bd init\`
+- If any \`bd\` command fails because beads is not initialized, run \`bd init\` once, then retry the command
+- If \`bd\` is not found, ask the user to install Beads from https://github.com/steveyegge/beads
+
 **Core execution loop (MANDATORY): Think -> Create -> Act**
 - **Think**: Use \`bd ready --json\` as source-of-truth before choosing work
 - **Create**: File discovered follow-up work immediately (especially anything >2 minutes)
