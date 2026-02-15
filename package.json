@@ -1,6 +1,6 @@
 {
   "name": "oh-my-opencode-beads",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "The Best AI Agent Harness - Batteries-Included OpenCode Plugin with Multi-Model Orchestration, Parallel Background Agents, and Crafted LSP/AST Tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -74,13 +74,13 @@
     "typescript": "^5.7.3"
   },
   "optionalDependencies": {
-    "oh-my-opencode-beads-darwin-arm64": "0.0.5",
-    "oh-my-opencode-beads-darwin-x64": "0.0.5",
-    "oh-my-opencode-beads-linux-arm64": "0.0.5",
-    "oh-my-opencode-beads-linux-arm64-musl": "0.0.5",
-    "oh-my-opencode-beads-linux-x64": "0.0.5",
-    "oh-my-opencode-beads-linux-x64-musl": "0.0.5",
-    "oh-my-opencode-beads-windows-x64": "0.0.5"
+    "oh-my-opencode-beads-darwin-arm64": "0.0.6",
+    "oh-my-opencode-beads-darwin-x64": "0.0.6",
+    "oh-my-opencode-beads-linux-arm64": "0.0.6",
+    "oh-my-opencode-beads-linux-arm64-musl": "0.0.6",
+    "oh-my-opencode-beads-linux-x64": "0.0.6",
+    "oh-my-opencode-beads-linux-x64-musl": "0.0.6",
+    "oh-my-opencode-beads-windows-x64": "0.0.6"
   },
   "trustedDependencies": [
     "@ast-grep/cli",
