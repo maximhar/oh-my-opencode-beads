@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
+import { mkdirSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { randomUUID } from "node:crypto"
 
 import type { BackgroundManager } from "../../features/background-agent"
 import { setMainSession, subagentSessions, _resetForTesting } from "../../features/claude-code-session-state"
+import { writeActiveWorkState } from "../../features/boulder-state"
 import { createTodoContinuationEnforcer } from "."
 import { CONTINUATION_COOLDOWN_MS } from "./constants"
 
@@ -124,6 +129,7 @@ describe("todo-continuation-enforcer", () => {
   let promptCalls: Array<{ sessionID: string; agent?: string; model?: { providerID?: string; modelID?: string }; text: string }>
   let toastCalls: Array<{ title: string; message: string }>
   let fakeTimers: FakeTimers
+  let testDirectory: string
 
   interface MockMessage {
     info: {
@@ -135,7 +141,7 @@ describe("todo-continuation-enforcer", () => {
 
   let mockMessages: MockMessage[] = []
 
-  function createMockPluginInput() {
+  function createMockPluginInput(directory: string = testDirectory) {
     return {
       client: {
         session: {
@@ -173,7 +179,7 @@ describe("todo-continuation-enforcer", () => {
           },
         },
       },
-      directory: "/tmp/test",
+      directory,
     } as any
   }
 
@@ -187,6 +193,8 @@ describe("todo-continuation-enforcer", () => {
 
   beforeEach(() => {
     fakeTimers = createFakeTimers()
+    testDirectory = join(tmpdir(), `todo-continuation-${randomUUID()}`)
+    mkdirSync(testDirectory, { recursive: true })
     _resetForTesting()
     promptCalls = []
     toastCalls = []
@@ -196,6 +204,7 @@ describe("todo-continuation-enforcer", () => {
   afterEach(() => {
     fakeTimers.restore()
     _resetForTesting()
+    rmSync(testDirectory, { recursive: true, force: true })
   })
 
   test("should inject continuation when idle with incomplete todos", async () => {
@@ -304,6 +313,55 @@ describe("todo-continuation-enforcer", () => {
     expect(promptCalls.length).toBe(1)
     expect(promptCalls[0].sessionID).toBe(bgTaskSession)
   }, { timeout: 15000 })
+
+  test("should inject continuation when active epic is in progress and todos are empty", async () => {
+    const sessionID = "main-epic-open"
+    setMainSession(sessionID)
+
+    writeActiveWorkState(testDirectory, {
+      active_epic_id: "epic-open",
+      active_epic_title: "Open Epic",
+      started_at: new Date().toISOString(),
+      session_ids: [sessionID],
+      agent: "atlas",
+    })
+
+    const mockInput = createMockPluginInput(testDirectory)
+    mockInput.client.session.todo = async () => ({ data: [] })
+    mockInput.client.session.messages = async () => ({
+      data: [{ id: "msg-1", role: "assistant", info: { agent: "atlas", providerID: "openrouter", modelID: "gpt-5" } } as any],
+    })
+
+    const hook = createTodoContinuationEnforcer(mockInput, {
+      readEpicStatus: () => "in_progress",
+    })
+    await hook.handler({ event: { type: "session.idle", properties: { sessionID } } })
+
+    await fakeTimers.advanceBy(3000, true)
+    expect(promptCalls).toHaveLength(1)
+    expect(promptCalls[0].text).toContain("Open Epic")
+  })
+
+  test("should not inject continuation when active epic is closed", async () => {
+    const sessionID = "main-epic-closed"
+    setMainSession(sessionID)
+
+    writeActiveWorkState(testDirectory, {
+      active_epic_id: "epic-closed",
+      active_epic_title: "Closed Epic",
+      started_at: new Date().toISOString(),
+      session_ids: [sessionID],
+      agent: "atlas",
+    })
+
+    const hook = createTodoContinuationEnforcer(createMockPluginInput(testDirectory), {
+      readEpicStatus: () => "closed",
+    })
+    await hook.handler({ event: { type: "session.idle", properties: { sessionID } } })
+
+    await fakeTimers.advanceBy(3000, true)
+    expect(promptCalls).toHaveLength(0)
+  })
 
 
 
@@ -1144,7 +1202,7 @@ describe("todo-continuation-enforcer", () => {
          },
          tui: { showToast: async () => ({}) },
        },
-       directory: "/tmp/test",
+        directory: testDirectory,
      } as any
 
      const hook = createTodoContinuationEnforcer(mockInput, {
@@ -1205,7 +1263,7 @@ describe("todo-continuation-enforcer", () => {
          },
          tui: { showToast: async () => ({}) },
        },
-       directory: "/tmp/test",
+        directory: testDirectory,
      } as any
 
      const hook = createTodoContinuationEnforcer(mockInput, {
@@ -1258,7 +1316,7 @@ describe("todo-continuation-enforcer", () => {
          },
          tui: { showToast: async () => ({}) },
        },
-       directory: "/tmp/test",
+        directory: testDirectory,
      } as any
 
      const hook = createTodoContinuationEnforcer(mockInput, {})
@@ -1313,7 +1371,7 @@ describe("todo-continuation-enforcer", () => {
          },
          tui: { showToast: async () => ({}) },
        },
-       directory: "/tmp/test",
+        directory: testDirectory,
      } as any
 
      const hook = createTodoContinuationEnforcer(mockInput, {})
@@ -1368,7 +1426,7 @@ describe("todo-continuation-enforcer", () => {
          },
          tui: { showToast: async () => ({}) },
        },
-       directory: "/tmp/test",
+        directory: testDirectory,
      } as any
 
      const hook = createTodoContinuationEnforcer(mockInput, {

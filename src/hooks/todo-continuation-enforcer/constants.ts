@@ -6,7 +6,7 @@ export const DEFAULT_SKIP_AGENTS = ["prometheus", "compaction"]
 
 export const CONTINUATION_PROMPT = `${createSystemDirective(SystemDirectiveTypes.WORK_CONTINUATION)}
 
-Incomplete work remains in your active issue queue. Continue working on the next ready issue.
+Incomplete work remains in your active epic. Continue working on the next ready issue in that epic.
 
 - Proceed without asking for permission
 - Mark each issue complete when finished (\`bd close <id>\`)

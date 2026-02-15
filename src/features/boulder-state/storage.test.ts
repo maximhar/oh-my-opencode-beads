@@ -272,19 +272,19 @@ describe("boulder-state", () => {
   // -----------------------------------------------------------------------
 
   describe("createActiveWorkState", () => {
-    test("should create state with issue id and title", () => {
+    test("should create state with epic id and title", () => {
       const state = createActiveWorkState("ses-1", "beads-abc", "Fix login", "atlas")
-      expect(state.active_issue_id).toBe("beads-abc")
-      expect(state.active_issue_title).toBe("Fix login")
+      expect(state.active_epic_id).toBe("beads-abc")
+      expect(state.active_epic_title).toBe("Fix login")
       expect(state.session_ids).toEqual(["ses-1"])
       expect(state.agent).toBe("atlas")
       expect(state.started_at).toBeDefined()
     })
 
-    test("should create state with null issue when not specified", () => {
+    test("should create state with null epic when not specified", () => {
       const state = createActiveWorkState("ses-2")
-      expect(state.active_issue_id).toBeNull()
-      expect(state.active_issue_title).toBeNull()
+      expect(state.active_epic_id).toBeNull()
+      expect(state.active_epic_title).toBeNull()
       expect(state.session_ids).toEqual(["ses-2"])
       expect(state.agent).toBeUndefined()
     })
@@ -293,8 +293,8 @@ describe("boulder-state", () => {
   describe("readActiveWorkState / writeActiveWorkState", () => {
     test("should round-trip active work state", () => {
       const state: ActiveWorkState = {
-        active_issue_id: "beads-xyz",
-        active_issue_title: "Refactor auth",
+        active_epic_id: "beads-xyz",
+        active_epic_title: "Refactor auth",
         started_at: "2026-02-14T10:00:00Z",
         session_ids: ["ses-a"],
         agent: "atlas",
@@ -304,8 +304,8 @@ describe("boulder-state", () => {
 
       const readBack = readActiveWorkState(TEST_DIR)
       expect(readBack).not.toBeNull()
-      expect(readBack?.active_issue_id).toBe("beads-xyz")
-      expect(readBack?.active_issue_title).toBe("Refactor auth")
+      expect(readBack?.active_epic_id).toBe("beads-xyz")
+      expect(readBack?.active_epic_title).toBe("Refactor auth")
       expect(readBack?.session_ids).toEqual(["ses-a"])
     })
 
@@ -324,8 +324,8 @@ describe("boulder-state", () => {
     test("should default session_ids to [] when missing", () => {
       const filePath = join(SISYPHUS_DIR, "active-work.json")
       writeFileSync(filePath, JSON.stringify({
-        active_issue_id: "beads-123",
-        active_issue_title: "Test",
+        active_epic_id: "beads-123",
+        active_epic_title: "Test",
         started_at: "2026-01-01T00:00:00Z",
       }))
       const result = readActiveWorkState(TEST_DIR)

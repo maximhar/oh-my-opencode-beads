@@ -2,50 +2,55 @@ export const START_WORK_TEMPLATE = `You are starting a beads-driven work session
 
 ## WHAT TO DO
 
-1. **Check for in-progress issues**: Run \`bd list --status=in_progress --json\` to find work already claimed
+1. **Check for in-progress epics**: Run \`bd list --type epic --status=in_progress --json\`
 
-2. **Find available work**: Run \`bd ready --json\` to list issues with no blockers
+2. **If none, find open epics**: Run \`bd list --type epic --status=open --json\`
 
 3. **Decision logic**:
-   - If there are in-progress issues:
-      - Resume work on the first in-progress issue
-   - Otherwise, if ready issues exist:
-      - Auto-select one ready issue (highest priority first, then oldest created)
-   - If no ready issues:
-      - Check \`bd blocked --json\` for blocked work
-      - Continue execution by resolving blockers (resolve or create/claim prerequisite work)
+   - If there are in-progress epics:
+      - Resume the first in-progress epic
+   - Otherwise, if open epics exist:
+      - Auto-select one open epic (highest priority first, then oldest created)
+   - If no epics exist:
+      - Create one with \`bd create --title=\"New execution epic\" --description=\"Execution scope\" --type=epic --priority=1\`
 
-4. **Claim work**: Run \`bd update <id> --status=in_progress\` to claim the selected issue
+4. **Activate epic**: Run \`bd update <epic-id> --status=in_progress\`
 
-5. **Read issue details** with \`bd show <id> --json\` and start executing the work
+5. **Read epic details** with \`bd show <epic-id> --json\`
+
+6. **Start execution inside the active epic**:
+   - Run \`bd ready --json\`
+   - Pick the next ready issue that belongs to the active epic
+   - Mark that issue in progress with \`bd update <issue-id> --status=in_progress\`
+   - Execute and close issues until the epic is closed
 
 ## OUTPUT FORMAT
 
-When resuming in-progress work:
+When resuming in-progress epic:
 \`\`\`
 Resuming Work Session
 
-Active Issue: [{issue-id}] {title}
+Active Epic: [{epic-id}] {title}
 Priority: P{priority}
 Status: in_progress
 
-Reading issue details and continuing work...
+Reading epic details and continuing work...
 \`\`\`
 
-When auto-selecting single issue:
+When auto-selecting epic:
 \`\`\`
 Starting Work Session
 
-Issue: [{issue-id}] {title}
+Active Epic: [{epic-id}] {title}
 Session ID: {session_id}
 Started: {timestamp}
 
-Claiming issue and beginning execution...
+Activating epic and beginning execution...
 \`\`\`
 
 ## CRITICAL
 
 - The session_id is injected by the hook - use it directly
-- Always claim the issue with \`bd update\` BEFORE starting work
-- Read the FULL issue details with \`bd show\` before beginning
-- Close issues with \`bd close <id>\` when work is complete`
+- Always activate the epic with \`bd update\` BEFORE starting work
+- Read the FULL epic details with \`bd show\` before beginning
+- Execute only issues inside the active epic until it is closed`

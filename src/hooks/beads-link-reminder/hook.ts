@@ -1,18 +1,31 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 
-import { subagentSessions } from "../../features/claude-code-session-state"
+import { getSessionAgent, subagentSessions } from "../../features/claude-code-session-state"
 import { storeToolMetadata } from "../../features/tool-metadata-store"
 
-const NEEDS_LINK_METADATA_KEY = "beadsLinkReminderNeeded"
+const NEEDS_INLINE_DEPS_METADATA_KEY = "beadsInlineDepsReminderNeeded"
+const TARGET_AGENTS = new Set(["atlas", "prometheus"])
 
-function isBdCreateWithoutDepAdd(command: string): boolean {
-  return /\bbd\s+create\b/.test(command) && !/\bbd\s+dep\s+add\b/.test(command)
+function isBdCreateWithoutInlineDeps(command: string): boolean {
+  const isCreate = /\bbd\s+create\b/.test(command)
+  const hasInlineDeps = /--deps\b/.test(command)
+  const isEpicCreate = /(?:--type(?:=|\s+)epic\b)|(?:-t\s+epic\b)/.test(command)
+  return isCreate && !hasInlineDeps && !isEpicCreate
+}
+
+function isTargetSession(sessionID: string, inputAgent?: string): boolean {
+  if (subagentSessions.has(sessionID)) {
+    return true
+  }
+
+  const sessionAgent = (inputAgent ?? getSessionAgent(sessionID) ?? "").toLowerCase()
+  return TARGET_AGENTS.has(sessionAgent)
 }
 
 export function createBeadsLinkReminderHook(ctx: PluginInput): {
-  "tool.execute.before": (input: { tool: string; sessionID: string; callID: string }, output: { args: Record<string, unknown> }) => Promise<void>
+  "tool.execute.before": (input: { tool: string; sessionID: string; callID: string; agent?: string }, output: { args: Record<string, unknown> }) => Promise<void>
   "tool.execute.after": (
-    input: { tool: string; sessionID: string; callID: string },
+    input: { tool: string; sessionID: string; callID: string; agent?: string },
     output: { title: string; output: string; metadata: Record<string, unknown> }
   ) => Promise<void>
 } {
@@ -22,18 +35,18 @@ export function createBeadsLinkReminderHook(ctx: PluginInput): {
         return
       }
 
-      if (!subagentSessions.has(input.sessionID)) {
+      if (!isTargetSession(input.sessionID, input.agent)) {
         return
       }
 
       const command = typeof output.args.command === "string" ? output.args.command : ""
-      if (!isBdCreateWithoutDepAdd(command)) {
+      if (!isBdCreateWithoutInlineDeps(command)) {
         return
       }
 
       storeToolMetadata(input.sessionID, input.callID, {
         metadata: {
-          [NEEDS_LINK_METADATA_KEY]: true,
+          [NEEDS_INLINE_DEPS_METADATA_KEY]: true,
         },
       })
     },
@@ -43,11 +56,11 @@ export function createBeadsLinkReminderHook(ctx: PluginInput): {
         return
       }
 
-      if (!subagentSessions.has(input.sessionID)) {
+      if (!isTargetSession(input.sessionID, input.agent)) {
         return
       }
 
-      const needsReminder = output.metadata?.[NEEDS_LINK_METADATA_KEY] === true
+      const needsReminder = output.metadata?.[NEEDS_INLINE_DEPS_METADATA_KEY] === true
       if (!needsReminder) {
         return
       }
@@ -61,7 +74,7 @@ export function createBeadsLinkReminderHook(ctx: PluginInput): {
               {
                 type: "text",
                 text:
-                  "Beads reminder: if you created a new issue for delegated work, link it to ASSIGNED_ISSUE_ID now: `bd dep add <new-issue> <ASSIGNED_ISSUE_ID>`.",
+                  "Beads reminder: when creating delegated follow-up issues, include inline deps: `bd create ... --deps parent-child:<ASSIGNED_EPIC_ID>,discovered-from:<ASSIGNED_ISSUE_ID>`. If the issue already exists, link it now: `bd dep add <new-issue> <depends-on>`.",
               },
             ],
           },

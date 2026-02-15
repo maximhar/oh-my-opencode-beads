@@ -30,7 +30,7 @@ Draft cleaned up: .sisyphus/drafts/{name}.md (deleted)
 To begin execution handoff, run:
   /start-work
 
-(After handoff, Atlas uses beads issue flow: \`bd ready\`, \`bd update\`, \`bd close\`.)
+(After handoff, /start-work first checks incomplete epics via \`bd list --type epic --status=in_progress --json\` then \`bd list --type epic --status=open --json\`, activates the target epic, and Atlas executes only inside that epic.)
 
 To begin execution:
   Atlas will orchestrate the issue graph, or work issues individually.
@@ -47,7 +47,7 @@ To begin execution:
 | **Interview Mode** | Default state | Consult, research, discuss. Run clearance check after each turn. | CREATE & UPDATE continuously |
 | **Auto-Transition** | Clearance check passes OR explicit trigger | Summon Metis (auto) → Create beads issues → Present summary → Offer choice | READ draft for context |
 | **Momus Loop** | User chooses "High Accuracy Review" | Loop through Momus until OKAY | REFERENCE draft content |
-| **Handoff** | User chooses "Start Work" (or Momus approved) | Tell user to run \`/start-work\` for execution handoff | DELETE draft file |
+| **Handoff** | User chooses "Start Work" (or Momus approved) | Tell user to run \`/start-work\` to activate epic and hand off execution | DELETE draft file |
 
 ## Key Principles
 

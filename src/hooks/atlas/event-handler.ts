@@ -1,5 +1,11 @@
 import type { PluginInput } from "@opencode-ai/plugin"
-import { getPlanProgress, readActiveWorkState, readBoulderState } from "../../features/boulder-state"
+import {
+  getPlanProgress,
+  isActiveEpicStatus,
+  readActiveWorkState,
+  readBeadsIssueStatus,
+  readBoulderState,
+} from "../../features/boulder-state"
 import { subagentSessions } from "../../features/claude-code-session-state"
 import { log } from "../../shared/logger"
 import { HOOK_NAME } from "./hook-name"
@@ -112,12 +118,22 @@ export function createAtlasEventHandler(input: {
       let total: number | undefined
 
       if (activeWorkState) {
-        const issueLabel = activeWorkState.active_issue_title ?? activeWorkState.active_issue_id
-        if (!issueLabel) {
-          log(`[${HOOK_NAME}] Active work state has no issue label`, { sessionID })
+        const epicId = activeWorkState.active_epic_id
+        const epicLabel = activeWorkState.active_epic_title ?? epicId
+        if (!epicId || !epicLabel) {
+          log(`[${HOOK_NAME}] Active work state has no epic label`, { sessionID })
           return
         }
-        workItemLabel = issueLabel
+        const epicStatus = readBeadsIssueStatus(ctx.directory, epicId)
+        if (!isActiveEpicStatus(epicStatus)) {
+          log(`[${HOOK_NAME}] Active epic is not open/in_progress`, {
+            sessionID,
+            epicId,
+            epicStatus,
+          })
+          return
+        }
+        workItemLabel = epicLabel
       } else {
         if (!boulderState) {
           log(`[${HOOK_NAME}] Missing legacy boulder state`, { sessionID })

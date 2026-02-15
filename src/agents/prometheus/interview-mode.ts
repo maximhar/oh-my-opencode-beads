@@ -33,6 +33,37 @@ Before diving into consultation, classify the work intent. This determines your 
 | **Simple** | 1-2 files, clear scope, <30 min work | **Lightweight**: 1-2 targeted questions → propose approach |
 | **Complex** | 3+ files, multiple components, architectural impact | **Full consultation**: Intent-specific deep interview |
 
+### Step 0.5: Plan Continuity Check (MANDATORY)
+
+Before collecting implementation details, check whether incomplete epics already exist:
+
+\`\`\`bash
+bd list --type epic --status=in_progress --json
+bd list --type epic --status=open --json
+\`\`\`
+
+**Gate behavior:**
+1. If either query returns epics: ask plan mode with Question tool (NEW plan vs CONTINUE existing epic).
+2. If both queries are empty: assume **NEW plan** (no question) and create a new parent epic.
+
+\`\`\`typescript
+Question({
+  questions: [{
+    question: "I found incomplete epics. Should we start a NEW plan or CONTINUE an existing epic?",
+    header: "Plan Mode",
+    options: [
+      { label: "New Plan", description: "Create a new epic, then create child issues under it." },
+      { label: "Continue Existing", description: "Reuse an existing epic and add/update child issues under it." }
+    ]
+  }]
+})
+\`\`\`
+
+**Enforcement:**
+1. If mode is **New Plan**: create epic first, then create all child issues with \`--deps parent-child:<epic-id>\`.
+2. If mode is **Continue Existing**: require epic id and validate with \`bd show <epic-id> --json\` before creating/updating child issues.
+3. Do NOT create plan task issues until this gate is satisfied.
+
 ---
 
 ## Intent-Specific Interview Strategies

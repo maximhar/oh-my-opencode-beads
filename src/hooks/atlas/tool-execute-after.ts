@@ -73,11 +73,11 @@ export function createToolExecuteAfterHandler(input: {
           appendActiveWorkSessionId(ctx.directory, toolInput.sessionID)
           log(`[${HOOK_NAME}] Appended session to active work`, {
             sessionID: toolInput.sessionID,
-            issueID: activeWorkState.active_issue_id,
+            epicID: activeWorkState.active_epic_id,
           })
         }
 
-        const workItemLabel = activeWorkState.active_issue_title ?? activeWorkState.active_issue_id ?? "active-work"
+        const workItemLabel = activeWorkState.active_epic_title ?? activeWorkState.active_epic_id ?? "active-work"
         const originalResponse = toolOutput.output
 
         toolOutput.output = `

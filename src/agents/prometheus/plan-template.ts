@@ -8,9 +8,11 @@
 
 export const PROMETHEUS_PLAN_TEMPLATE = `## Plan Structure
 
-Record plan as beads issues using \`bd create\` + \`bd dep add\` + \`bd update --design/--notes\`.
+Record plan as beads issues using \`bd create --deps ...\` + \`bd update --design/--notes\`.
 
-**Parent issue** (epic) holds the plan-level context. Each task is a child issue with dependencies.
+**Parent issue** (epic) holds the plan-level context.
+**Strict rule**: every non-epic issue MUST be created with \`--deps parent-child:<epic-id>\`.
+Use \`blocks:<issue-id>\` only as additional ordering constraints.
 
 ### Parent Issue (Epic) — Design Field
 
@@ -409,9 +411,10 @@ Parallel Speedup: ~40% faster than sequential
   - Pre-commit: \`test command\`
 \`\`\`
 
-**Then register dependencies:**
+**Declare dependencies inline during creation (strict parent-child required):**
 \`\`\`bash
-bd dep add <this-issue> <depends-on-issue>
+bd create --title="..." --description="..." --type=task --priority=2 --deps parent-child:<epic-id>
+bd create --title="..." --description="..." --type=task --priority=2 --deps parent-child:<epic-id>,blocks:<depends-on-issue>
 \`\`\`
 
 ---

@@ -1,7 +1,11 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 
 import type { BackgroundManager } from "../../features/background-agent"
-import { readActiveWorkState } from "../../features/boulder-state"
+import {
+  isActiveEpicStatus,
+  readActiveWorkState,
+  readBeadsIssueStatus,
+} from "../../features/boulder-state"
 import {
   findNearestMessageWithFields,
   type ToolPermission,
@@ -35,6 +39,7 @@ export async function injectContinuation(args: {
   resolvedInfo?: ResolvedMessageInfo
   workItemLabel?: string
   sessionStateStore: SessionStateStore
+  readEpicStatus?: (directory: string, epicId: string) => string | null
 }): Promise<void> {
   const {
     ctx,
@@ -44,7 +49,10 @@ export async function injectContinuation(args: {
     resolvedInfo,
     workItemLabel,
     sessionStateStore,
+    readEpicStatus,
   } = args
+
+  const resolveEpicStatus = readEpicStatus ?? readBeadsIssueStatus
 
   const state = sessionStateStore.getExistingState(sessionID)
   if (state?.isRecovering) {
@@ -62,20 +70,32 @@ export async function injectContinuation(args: {
   }
 
   const activeWorkState = readActiveWorkState(ctx.directory)
+  const activeEpicId =
+    activeWorkState?.session_ids?.includes(sessionID) ? activeWorkState.active_epic_id : undefined
+  const activeEpicStatus = activeEpicId
+    ? resolveEpicStatus(ctx.directory, activeEpicId)
+    : undefined
   const activeWorkLabel =
     workItemLabel ??
     (activeWorkState?.session_ids?.includes(sessionID)
-      ? (activeWorkState.active_issue_title ?? activeWorkState.active_issue_id ?? undefined)
+      ? (activeWorkState.active_epic_title ?? activeWorkState.active_epic_id ?? undefined)
       : undefined)
 
   let freshIncompleteCount = 0
   let totalCount = 0
   let remainingSection = ""
 
-  if (activeWorkLabel) {
+  if (activeWorkLabel && activeEpicStatus && isActiveEpicStatus(activeEpicStatus)) {
     freshIncompleteCount = 1
     totalCount = 1
     remainingSection = `Remaining work:\n- ${activeWorkLabel}`
+  } else if (activeWorkLabel) {
+    log(`[${HOOK_NAME}] Skipped injection: active epic is not open/in_progress`, {
+      sessionID,
+      activeEpicId,
+      activeEpicStatus,
+    })
+    return
   } else {
     let todos: Todo[] = []
     try {

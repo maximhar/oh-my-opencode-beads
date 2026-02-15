@@ -5,6 +5,7 @@ export interface TodoContinuationEnforcerOptions {
   backgroundManager?: BackgroundManager
   skipAgents?: string[]
   isContinuationStopped?: (sessionID: string) => boolean
+  readEpicStatus?: (directory: string, epicId: string) => string | null
 }
 
 export interface TodoContinuationEnforcer {

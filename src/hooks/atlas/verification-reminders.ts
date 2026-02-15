@@ -26,7 +26,7 @@ export function buildOrchestratorReminder(
   const completionSummary =
     remaining !== undefined
       ? `**${remaining} tasks remain. Keep working.**`
-      : "**Continue with the next ready issue. Keep working.**"
+      : "**Continue with the next ready issue in the active epic. Keep working.**"
 
   return `
 ---
@@ -69,7 +69,7 @@ RIGHT NOW - Do not delay. Verification passed → Mark IMMEDIATELY.
 
 Update issue tracking immediately:
 - Close the completed issue with \`bd close <id>\`
-- If follow-up work remains, create/claim the next issue with \`bd create\` and \`bd update <id> --status=in_progress\`
+- If follow-up work remains, claim the next ready issue in the active epic with \`bd update <id> --status=in_progress\`
 
 **DO THIS BEFORE ANYTHING ELSE. Unmarked = Untracked = Lost progress.**
 
@@ -80,7 +80,7 @@ Update issue tracking immediately:
 
 **STEP 9: PROCEED TO NEXT TASK**
 
-- Run \`bd ready\` AGAIN to identify the next available issue
+- Run \`bd ready\` AGAIN to identify the next available issue in the active epic
 - Start immediately - DO NOT STOP
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -96,14 +96,14 @@ ${buildVerificationReminder(sessionId)}
 
 **STEP 5: CHECK YOUR PROGRESS DIRECTLY (EVERY TIME — NO EXCEPTIONS)**
 
-Do NOT rely on memory or cached state. Run \`bd ready\` and \`bd list --status=in_progress\` NOW to see exact current state.
-Count open vs closed issues. This is your ground truth for what comes next.
+Do NOT rely on memory or cached state. Run \`bd show <ACTIVE_EPIC_ID> --json\` and \`bd ready\` NOW to see exact current state.
+Count open vs closed issues inside the active epic. This is your ground truth for what comes next.
 
 **STEP 6: UPDATE ISSUE STATUS (IMMEDIATELY)**
 
 RIGHT NOW - Do not delay. Verification passed → Mark IMMEDIATELY.
 
-1. Run \`bd list --status=in_progress\` to see your active issues
+1. Run \`bd show <ACTIVE_EPIC_ID> --json\` and identify active in-progress issues in this epic
 2. Close the completed issue with \`bd close <id>\`
 
 **DO THIS BEFORE ANYTHING ELSE. Unclosed = Untracked = Lost progress.**
@@ -114,7 +114,7 @@ If QA issues exist in your issue list:
 - Execute them BEFORE proceeding
 - Close each QA issue after successful verification
 
-**STEP 8: PROCEED TO NEXT READY ISSUE**
+**STEP 8: PROCEED TO NEXT READY ISSUE IN ACTIVE EPIC**
 
 - Run \`bd ready\` AGAIN to identify the next available issue
 - Start immediately - DO NOT STOP

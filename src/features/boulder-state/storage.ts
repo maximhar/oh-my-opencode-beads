@@ -8,10 +8,14 @@
  * migrated start-work flow.
  */
 
+import { execFileSync } from "node:child_process"
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs"
 import { dirname, join, basename } from "node:path"
 import type { BoulderState, PlanProgress, ActiveWorkState } from "./types"
 import { BOULDER_DIR, BOULDER_FILE, PROMETHEUS_PLANS_DIR } from "./constants"
+
+const ACTIVE_BEADS_STATUSES = new Set(["open", "in_progress"])
+const CLOSED_BEADS_STATUS = "closed"
 
 // ---------------------------------------------------------------------------
 // Legacy boulder.json helpers (kept for backward compat)
@@ -181,13 +185,13 @@ function getActiveWorkFilePath(directory: string): string {
  */
 export function createActiveWorkState(
   sessionId: string,
-  issueId?: string | null,
-  issueTitle?: string | null,
+  epicId?: string | null,
+  epicTitle?: string | null,
   agent?: string
 ): ActiveWorkState {
   return {
-    active_issue_id: issueId ?? null,
-    active_issue_title: issueTitle ?? null,
+    active_epic_id: epicId ?? null,
+    active_epic_title: epicTitle ?? null,
     started_at: new Date().toISOString(),
     session_ids: [sessionId],
     ...(agent !== undefined ? { agent } : {}),
@@ -270,4 +274,29 @@ export function appendActiveWorkSessionId(
     }
   }
   return state
+}
+
+export function readBeadsIssueStatus(directory: string, issueId: string): string | null {
+  try {
+    const rawOutput = execFileSync("bd", ["show", issueId, "--json"], {
+      cwd: directory,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+    const parsed = JSON.parse(rawOutput)
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null
+    }
+    return typeof parsed.status === "string" ? parsed.status : null
+  } catch {
+    return null
+  }
+}
+
+export function isActiveEpicStatus(status: string | null | undefined): boolean {
+  return !!status && ACTIVE_BEADS_STATUSES.has(status)
+}
+
+export function isClosedEpicStatus(status: string | null | undefined): boolean {
+  return status === CLOSED_BEADS_STATUS
 }
