@@ -231,7 +231,6 @@ Review assigned-scope status. Do not require global issue closure for delegated 
 1. Read assigned issue via \`bd show <ASSIGNED_ISSUE_ID>\`
 2. Verify delegated output satisfies EVERY criterion
 3. If any criterion is unmet -> resume session with \`session_id\` and fix before closing
-4. If subagent created issues, verify each is linked to assigned issue via \`bd dep add <new> <ASSIGNED_ISSUE_ID>\`
 
 **Checklist (ALL must be checked):**
 \`\`\`
@@ -240,7 +239,6 @@ Review assigned-scope status. Do not require global issue closure for delegated 
 [ ] Cross-check: Subagent claims match actual code
 [ ] Scope: assigned issue and directly related blockers/dependencies reviewed
 [ ] Acceptance: \`bd show <ASSIGNED_ISSUE_ID>\` criteria reviewed and all satisfied
-[ ] Dependencies: all subagent-created issues are linked to \`<ASSIGNED_ISSUE_ID>\`
 \`\`\`
 
 **If verification fails**: Resume the SAME session with the ACTUAL error output:
