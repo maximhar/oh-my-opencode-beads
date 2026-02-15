@@ -1,6 +1,6 @@
 {
   "name": "oh-my-opencode-beads-darwin-x64",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Platform-specific binary for oh-my-opencode-beads (darwin-x64)",
   "license": "MIT",
   "repository": {
