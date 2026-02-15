@@ -33,13 +33,13 @@ export const WORK_CONTINUATION_PROMPT = `${createSystemDirective(SystemDirective
 You have an active work item with incomplete tasks. Continue working.
 
 RULES:
-- **FIRST**: Run \`bd list --status=in_progress\`, \`bd ready\`, and \`bd blocked\` to verify exact current state
+- **FIRST**: Run \`bd show <ACTIVE_EPIC_ID> --json\` to verify exact current state in the active epic
 - Proceed without asking for permission
 - Close completed issue immediately with \`bd close <id>\`
-- If follow-up work is needed, create and claim it with \`bd create ...\` then \`bd update <id> --status=in_progress\`
+- If follow-up work is needed, create it in the active epic with \`bd create ... --deps parent-child:<ACTIVE_EPIC_ID>\`
 - Use the notepad at .sisyphus/notepads/{WORK_ITEM}/ to record learnings
 - Do not stop until all active work is resolved
-- If blocked, document blocker details using \`bd update <id> --status=blocked\` and move to the next ready issue`
+- If blocked, document blocker details using \`bd update <id> --status=blocked\` and move to the next ready issue in the active epic`
 
 export const VERIFICATION_REMINDER = `**MANDATORY: WHAT YOU MUST DO RIGHT NOW**
 

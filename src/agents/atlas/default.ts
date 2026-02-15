@@ -316,7 +316,7 @@ Repeat Step 3 until the active epic is complete.
 Start each execution cycle:
 - Run \`bd ready --json\`
 - Run \`bd show <ACTIVE_EPIC_ID> --json\`
-- Ensure selected issue is \`in_progress\` before delegation
+- Ensure delegation prompt instructs subagent to claim \`ASSIGNED_ISSUE_ID\` via \`bd update <ASSIGNED_ISSUE_ID> --status in_progress\`
 
 End each execution cycle/session:
 - Close completed issue immediately: \`bd close <issue-id>\`

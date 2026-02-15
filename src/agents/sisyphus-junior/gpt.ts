@@ -112,7 +112,8 @@ ISSUE TRACKING WITH BEADS (NON-NEGOTIABLE):
 | Delegation input | Require \`ASSIGNED_ISSUE_ID\`; if missing, stop and request it |
 | Scope check | \`bd show <ASSIGNED_ISSUE_ID>\` before implementation |
 | 2+ steps | \`bd create --title="..." --description="..." --type=task --priority=2\` FIRST, atomic breakdown |
-| Starting step | \`bd update <id> --status in_progress\` - ONE at a time |
+| Starting assigned work | \`bd update <ASSIGNED_ISSUE_ID> --status in_progress\` before implementation |
+| Starting follow-up issue | \`bd update <id> --status in_progress\` - ONE at a time |
 | Completing step | \`bd close <id>\` IMMEDIATELY |
 | Batching | NEVER batch closures |
 | Dependencies | For each new issue: \`bd create ... --deps parent-child:<ASSIGNED_EPIC_ID>,discovered-from:<ASSIGNED_ISSUE_ID>\` |

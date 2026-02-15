@@ -51,6 +51,12 @@ interface NoHintEpicResolution {
   epics?: BeadsIssue[]
 }
 
+interface StartWorkSnapshot {
+  epic: unknown
+  ready: unknown
+  warnings: string[]
+}
+
 function runBdJson(directory: string, args: string[]): unknown {
   const rawOutput = execFileSync("bd", [...args, "--json"], {
     cwd: directory,
@@ -154,6 +160,58 @@ function formatEpicList(epics: BeadsIssue[]): string {
     .join("\n")
 }
 
+function ensureEpicInProgress(directory: string, epicId: string): string | null {
+  try {
+    execFileSync("bd", ["update", epicId, "--status", "in_progress"], {
+      cwd: directory,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+    return null
+  } catch {
+    return `Failed to set epic ${epicId} to in_progress automatically.`
+  }
+}
+
+function loadStartWorkSnapshot(directory: string, epicId: string): StartWorkSnapshot {
+  const warnings: string[] = []
+
+  let epic: unknown = null
+  try {
+    epic = runBdJson(directory, ["show", epicId])
+  } catch {
+    warnings.push(`Failed to load \`bd show ${epicId} --json\`.`)
+  }
+
+  let ready: unknown = null
+  try {
+    ready = runBdJson(directory, ["ready"])
+  } catch {
+    warnings.push("Failed to load `bd ready --json`.")
+  }
+
+  return { epic, ready, warnings }
+}
+
+function formatSnapshot(snapshot: StartWorkSnapshot): string {
+  const warningSection = snapshot.warnings.length
+    ? `\nWarnings:\n${snapshot.warnings.map((warning) => `- ${warning}`).join("\n")}`
+    : ""
+
+  return `
+Preloaded execution context (already fetched):
+
+\`bd show <active-epic-id> --json\`
+\`\`\`json
+${JSON.stringify(snapshot.epic, null, 2)}
+\`\`\`
+
+\`bd ready --json\`
+\`\`\`json
+${JSON.stringify(snapshot.ready, null, 2)}
+\`\`\`${warningSection}`
+}
+
 export function createStartWorkHook(ctx: PluginInput) {
   return {
     "chat.message": async (
@@ -195,6 +253,8 @@ export function createStartWorkHook(ctx: PluginInput) {
 
         if (existingEpic) {
           appendActiveWorkSessionId(ctx.directory, sessionId)
+          const updateError = ensureEpicInProgress(ctx.directory, existingEpic.id)
+          const snapshot = loadStartWorkSnapshot(ctx.directory, existingEpic.id)
           const epicLabel = `${existingEpic.id}${existingEpic.title ? ` – ${existingEpic.title}` : ""}`
 
           contextInfo = `
@@ -204,15 +264,20 @@ export function createStartWorkHook(ctx: PluginInput) {
 **Sessions**: ${existingState.session_ids.length + 1} (current session appended)
 **Started**: ${existingState.started_at}
 
-Run \`bd show ${existingEpic.id}\` to review the epic, then continue working.
-Check progress with \`bd show ${existingEpic.id} --json\`.
-Choose work only from this active epic.`
+The hook already executed:
+- \`bd update ${existingEpic.id} --status in_progress\`
+${updateError ? `- ${updateError}` : ""}
+${formatSnapshot(snapshot)}
+
+Choose work only from this active epic and start implementation immediately.`
         } else {
           const noHintResolution = resolveNoHintEpic(ctx.directory)
           if (noHintResolution.kind === "single" && noHintResolution.epic) {
             const resolvedEpic = noHintResolution.epic
             const newState = createActiveWorkState(sessionId, resolvedEpic.id, resolvedEpic.title ?? null, "atlas")
             writeActiveWorkState(ctx.directory, newState)
+            const updateError = ensureEpicInProgress(ctx.directory, resolvedEpic.id)
+            const snapshot = loadStartWorkSnapshot(ctx.directory, resolvedEpic.id)
 
             contextInfo = `
 ## Starting Work Session
@@ -222,9 +287,12 @@ Choose work only from this active epic.`
 **Started**: ${timestamp}
 
 Auto-resolved because exactly one open/in-progress epic exists.
-1. Run \`bd show ${resolvedEpic.id} --json\`.
-2. If status is \`open\`, activate it: \`bd update ${resolvedEpic.id} --status in_progress\`.
-3. Run \`bd ready --json\` and execute the next ready issue inside this epic.`
+The hook already executed:
+- \`bd update ${resolvedEpic.id} --status in_progress\`
+${updateError ? `- ${updateError}` : ""}
+${formatSnapshot(snapshot)}
+
+Execute all ready issues ordered by priority inside this epic immediately.`
           } else if (noHintResolution.kind === "multiple" && noHintResolution.epics) {
             contextInfo = `
 ## Cannot Start Work
@@ -259,6 +327,8 @@ Ask the user to re-run with a valid epic id, for example:
         } else {
           const newState = createActiveWorkState(sessionId, hintedEpic.id, hintedEpic.title ?? null, "atlas")
           writeActiveWorkState(ctx.directory, newState)
+          const updateError = ensureEpicInProgress(ctx.directory, hintedEpic.id)
+          const snapshot = loadStartWorkSnapshot(ctx.directory, hintedEpic.id)
 
           contextInfo = `
 ## Starting Work on Specified Epic
@@ -268,11 +338,12 @@ Ask the user to re-run with a valid epic id, for example:
 **Session ID**: ${sessionId}
 **Started**: ${timestamp}
 
-Resolve and activate the epic:
-1. Run \`bd show ${hintedEpic.id} --json\` to confirm this epic.
-2. If status is \`open\`, mark it active: \`bd update ${hintedEpic.id} --status in_progress\`.
-3. Run \`bd ready --json\` and pick the next ready issue inside this epic.
-4. Begin implementation.`
+The hook already executed:
+- \`bd update ${hintedEpic.id} --status in_progress\`
+${updateError ? `- ${updateError}` : ""}
+${formatSnapshot(snapshot)}
+
+Begin implementation immediately inside this epic.`
         }
       } else {
         const noHintResolution = resolveNoHintEpic(ctx.directory)
@@ -280,6 +351,8 @@ Resolve and activate the epic:
           const resolvedEpic = noHintResolution.epic
           const newState = createActiveWorkState(sessionId, resolvedEpic.id, resolvedEpic.title ?? null, "atlas")
           writeActiveWorkState(ctx.directory, newState)
+          const updateError = ensureEpicInProgress(ctx.directory, resolvedEpic.id)
+          const snapshot = loadStartWorkSnapshot(ctx.directory, resolvedEpic.id)
 
           contextInfo = `
 ## Starting Work Session
@@ -289,9 +362,12 @@ Resolve and activate the epic:
 **Started**: ${timestamp}
 
 Auto-resolved because exactly one open/in-progress epic exists.
-1. Run \`bd show ${resolvedEpic.id} --json\`.
-2. If status is \`open\`, activate it: \`bd update ${resolvedEpic.id} --status in_progress\`.
-3. Run \`bd ready --json\` and execute the next ready issue inside this epic.`
+The hook already executed:
+- \`bd update ${resolvedEpic.id} --status in_progress\`
+${updateError ? `- ${updateError}` : ""}
+${formatSnapshot(snapshot)}
+
+Execute all ready issues ordered by priority inside this epic immediately.`
         } else if (noHintResolution.kind === "multiple" && noHintResolution.epics) {
           contextInfo = `
 ## Cannot Start Work
