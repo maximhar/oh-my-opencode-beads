@@ -17,13 +17,12 @@ describe("MOMUS_SYSTEM_PROMPT policy requirements", () => {
     expect(prompt).toMatch(/<system-reminder>|system-reminder/)
   })
 
-  test("should accept .sisyphus/plans/*.md paths as valid input", () => {
+  test("should accept beads issue references as valid input", () => {
     // given
     const prompt = MOMUS_SYSTEM_PROMPT
 
     // when / #then
-    expect(prompt).toContain(".sisyphus/plans/")
-    expect(prompt).toContain(".md")
+    expect(prompt.toLowerCase()).toMatch(/beads|bd show|issue graph/)
     // Extraction policy should be mentioned
     expect(prompt.toLowerCase()).toMatch(/extract|search|find/)
   })
@@ -39,13 +38,13 @@ describe("MOMUS_SYSTEM_PROMPT policy requirements", () => {
     expect(prompt.toLowerCase()).toMatch(/inline/)
   })
 
-  test("should NOT teach that 'Please review' is INVALID (conversational wrapper allowed)", () => {
+  test("should NOT teach that conversational issue wrappers are invalid", () => {
     // given
     const prompt = MOMUS_SYSTEM_PROMPT
 
     // when / #then
     // In RED phase, this will FAIL because current prompt explicitly lists this as INVALID
-    const invalidExample = "Please review .sisyphus/plans/plan.md"
+    const invalidExample = "Please review issue oh-my-opencode-beads-abc"
     const rejectionTeaching = new RegExp(
       `reject.*${escapeRegExp(invalidExample)}`,
       "i",
@@ -56,12 +55,12 @@ describe("MOMUS_SYSTEM_PROMPT policy requirements", () => {
     expect(prompt).not.toMatch(rejectionTeaching)
   })
 
-  test("should handle ambiguity (2+ paths) and 'no plan content found' rejection", () => {
+  test("should handle ambiguity and 'no plan content found' rejection", () => {
     // given
     const prompt = MOMUS_SYSTEM_PROMPT
 
     // when / #then
-    // Should mention what happens when multiple paths are found
+    // Should mention what happens when multiple references are found
     expect(prompt.toLowerCase()).toMatch(/multiple|ambiguous|2\+|two/)
     // Should mention rejection if no plan content found
     expect(prompt.toLowerCase()).toMatch(/no plan content|no plan.*found|reject/)

@@ -60,11 +60,9 @@ while (true) {
 5. **MOMUS INVOCATION RULE (CRITICAL)**:
    When invoking Momus, provide ONLY the plan reference as the prompt.
    - Do NOT wrap in explanations, markdown, or conversational text.
-   - For file-based plans: provide the file path string
    - For beads issue plans: provide a clear reference to the issue graph
    - System hooks may append system directives, but that is expected and handled by Momus.
    - Example invocation: \`prompt="Review beads issue graph for plan: {plan-name}"\`
-   - Legacy fallback: \`prompt=".sisyphus/plans/{name}.md"\` (only if plan-file already exists)
 
 ### What "OKAY" Means
 
