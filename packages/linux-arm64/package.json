@@ -1,6 +1,6 @@
 {
   "name": "oh-my-opencode-beads-linux-arm64",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Platform-specific binary for oh-my-opencode-beads (linux-arm64)",
   "license": "MIT",
   "repository": {
