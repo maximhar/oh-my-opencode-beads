@@ -54,6 +54,7 @@ interface NoHintEpicResolution {
 interface StartWorkSnapshot {
   epic: unknown
   ready: unknown
+  inProgress: unknown
   warnings: string[]
 }
 
@@ -190,7 +191,14 @@ function loadStartWorkSnapshot(directory: string, epicId: string): StartWorkSnap
     warnings.push("Failed to load `bd ready --json`.")
   }
 
-  return { epic, ready, warnings }
+  let inProgress: unknown = null
+  try {
+    inProgress = runBdJson(directory, ["list", "--status", "in_progress"])
+  } catch {
+    warnings.push("Failed to load `bd list --status=in_progress --json`.")
+  }
+
+  return { epic, ready, inProgress, warnings }
 }
 
 function formatSnapshot(snapshot: StartWorkSnapshot): string {
@@ -209,6 +217,11 @@ ${JSON.stringify(snapshot.epic, null, 2)}
 \`bd ready --json\`
 \`\`\`json
 ${JSON.stringify(snapshot.ready, null, 2)}
+\`\`\`
+
+\`bd list --status=in_progress --json\`
+\`\`\`json
+${JSON.stringify(snapshot.inProgress, null, 2)}
 \`\`\`${warningSection}`
 }
 
@@ -269,7 +282,8 @@ The hook already executed:
 ${updateError ? `- ${updateError}` : ""}
 ${formatSnapshot(snapshot)}
 
-Choose work only from this active epic and start implementation immediately.`
+Choose work only from this active epic and start implementation immediately.
+Parallelize all currently ready independent issues in one wave; run sequentially only when dependencies or file conflicts require ordering.`
         } else {
           const noHintResolution = resolveNoHintEpic(ctx.directory)
           if (noHintResolution.kind === "single" && noHintResolution.epic) {
@@ -292,7 +306,8 @@ The hook already executed:
 ${updateError ? `- ${updateError}` : ""}
 ${formatSnapshot(snapshot)}
 
-Execute all ready issues ordered by priority inside this epic immediately.`
+Execute all ready issues inside this epic immediately.
+Parallelize all currently ready independent issues in one wave; run sequentially only when dependencies or file conflicts require ordering.`
           } else if (noHintResolution.kind === "multiple" && noHintResolution.epics) {
             contextInfo = `
 ## Cannot Start Work
@@ -343,7 +358,8 @@ The hook already executed:
 ${updateError ? `- ${updateError}` : ""}
 ${formatSnapshot(snapshot)}
 
-Begin implementation immediately inside this epic.`
+Begin implementation immediately inside this epic.
+Parallelize all currently ready independent issues in one wave; run sequentially only when dependencies or file conflicts require ordering.`
         }
       } else {
         const noHintResolution = resolveNoHintEpic(ctx.directory)
@@ -367,7 +383,8 @@ The hook already executed:
 ${updateError ? `- ${updateError}` : ""}
 ${formatSnapshot(snapshot)}
 
-Execute all ready issues ordered by priority inside this epic immediately.`
+Execute all ready issues inside this epic immediately.
+Parallelize all currently ready independent issues in one wave; run sequentially only when dependencies or file conflicts require ordering.`
         } else if (noHintResolution.kind === "multiple" && noHintResolution.epics) {
           contextInfo = `
 ## Cannot Start Work

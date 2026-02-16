@@ -1,9 +1,13 @@
-import { describe, expect, test, beforeEach, afterEach, mock } from "bun:test"
+import { describe, expect, test, beforeEach, afterEach, mock, spyOn } from "bun:test"
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { randomUUID } from "node:crypto"
+import * as childProcess from "node:child_process"
 import {
+  createActiveWorkState,
+  writeActiveWorkState,
+  clearActiveWorkState,
   writeBoulderState,
   clearBoulderState,
   readBoulderState,
@@ -70,10 +74,12 @@ describe("atlas hook", () => {
       mkdirSync(SISYPHUS_DIR, { recursive: true })
     }
     clearBoulderState(TEST_DIR)
+    clearActiveWorkState(TEST_DIR)
   })
 
   afterEach(() => {
     clearBoulderState(TEST_DIR)
+    clearActiveWorkState(TEST_DIR)
     if (existsSync(TEST_DIR)) {
       rmSync(TEST_DIR, { recursive: true, force: true })
     }
@@ -213,6 +219,94 @@ describe("atlas hook", () => {
       
       cleanupMessageStorage(sessionID)
     })
+
+     test("should include preloaded epic-scoped ready/blocked snapshot for active work", async () => {
+       const sessionID = "session-active-work-snapshot-test"
+       setupMessageStorage(sessionID, "atlas")
+
+       writeActiveWorkState(
+         TEST_DIR,
+         createActiveWorkState(sessionID, "beads-777", "Active Epic")
+       )
+
+       const execSpy = spyOn(childProcess, "execFileSync")
+       execSpy.mockImplementation(
+         ((file: string, args?: readonly string[] | childProcess.ExecFileSyncOptions) => {
+           const argv = Array.isArray(args) ? args : []
+           if (file === "bd" && argv.includes("ready") && argv.includes("--parent") && argv.includes("beads-777")) {
+             return JSON.stringify([{ id: "beads-778", title: "Ready Child" }])
+           }
+           if (file === "bd" && argv.includes("blocked") && argv.includes("--parent") && argv.includes("beads-777")) {
+             return JSON.stringify([{ id: "beads-779", title: "Blocked Child" }])
+           }
+           return JSON.stringify([])
+         }) as typeof childProcess.execFileSync
+       )
+
+       const hook = createAtlasHook(createMockPluginInput())
+       const output = {
+         title: "Sisyphus Task",
+         output: "Task completed successfully",
+         metadata: {},
+       }
+
+       try {
+         // when
+         await hook["tool.execute.after"](
+           { tool: "task", sessionID },
+           output
+         )
+
+         // then
+         expect(output.output).toContain("SUBAGENT WORK COMPLETED")
+         expect(output.output).toContain("bd ready --json --parent beads-777")
+         expect(output.output).toContain("bd blocked --json --parent beads-777")
+         expect(output.output).toContain("beads-778")
+         expect(output.output).toContain("beads-779")
+       } finally {
+         execSpy.mockRestore()
+         cleanupMessageStorage(sessionID)
+       }
+     })
+
+     test("should include warning when epic-scoped snapshot preload fails", async () => {
+       const sessionID = "session-active-work-warning-test"
+       setupMessageStorage(sessionID, "atlas")
+
+       writeActiveWorkState(
+         TEST_DIR,
+         createActiveWorkState(sessionID, "beads-880", "Active Epic")
+       )
+
+       const execSpy = spyOn(childProcess, "execFileSync")
+       execSpy.mockImplementation(() => {
+         throw new Error("bd failed")
+       })
+
+       const hook = createAtlasHook(createMockPluginInput())
+       const output = {
+         title: "Sisyphus Task",
+         output: "Task completed successfully",
+         metadata: {},
+       }
+
+       try {
+         // when
+         await hook["tool.execute.after"](
+           { tool: "task", sessionID },
+           output
+         )
+
+         // then
+         expect(output.output).toContain("SUBAGENT WORK COMPLETED")
+         expect(output.output).toContain("Failed to preload epic-scoped")
+         expect(output.output).toContain("bd ready --json --parent beads-880")
+         expect(output.output).toContain("bd blocked --json --parent beads-880")
+       } finally {
+         execSpy.mockRestore()
+         cleanupMessageStorage(sessionID)
+       }
+     })
 
      test("should still transform when plan is complete (shows progress)", async () => {
        // given - boulder state with complete plan, Atlas caller

@@ -135,18 +135,20 @@ Use:
 \`\`\`bash
 bd show <ACTIVE_EPIC_ID>
 bd show <ACTIVE_EPIC_ID> --json
-bd blocked
-bd ready --json
+bd blocked --json --parent <ACTIVE_EPIC_ID>
+bd ready --json --parent <ACTIVE_EPIC_ID>
 \`\`\`
 
-**Ground truth rule**: \`bd ready --json\` is the execution source of truth. Prefer it over ad-hoc queue scanning.
+**Ground truth rule**: \`bd ready --json --parent <ACTIVE_EPIC_ID>\` is the execution source of truth. Prefer it over ad-hoc queue scanning.
 
 ## Step 1.5: Think -> Create -> Act (Beads Loop)
 
 For each active-epic cycle:
-1. **Think**: Select the highest-priority unblocked issue from \`bd ready --json\`.
-2. **Create**: If you discover follow-up work (>2 minutes), file it immediately.
-3. **Act**: Execute and close the current issue before moving to the next.
+1. **Think**: Select ready issues from \`bd ready --json --parent <ACTIVE_EPIC_ID>\`.
+2. **Parallelize**: Treat \`bd ready --json --parent <ACTIVE_EPIC_ID>\` as the candidate set and dispatch all currently ready independent issues in one parallel wave.
+3. **Sequence only when required**: Process sequentially only for dependency edges or file conflicts.
+4. **Create**: If you discover follow-up work (>2 minutes), file it immediately.
+5. **Act**: Execute and close delegated issues, then repeat with the next ready wave.
 
 Dependency types are mandatory and explicit:
 - \`blocks\`: hard prerequisite (affects ready state)
@@ -314,7 +316,8 @@ Repeat Step 3 until the active epic is complete.
 ### 3.7 Session Bookends (MANDATORY)
 
 Start each execution cycle:
-- Run \`bd ready --json\`
+- Run \`bd ready --json --parent <ACTIVE_EPIC_ID>\`
+- Run \`bd blocked --json --parent <ACTIVE_EPIC_ID>\`
 - Run \`bd show <ACTIVE_EPIC_ID> --json\`
 - Ensure delegation prompt instructs subagent to claim \`ASSIGNED_ISSUE_ID\` via \`bd update <ASSIGNED_ISSUE_ID> --status in_progress\`
 
@@ -366,6 +369,12 @@ task(category="quick", load_skills=[], run_in_background=false, prompt="Task 3..
 task(category="quick", load_skills=[], run_in_background=false, prompt="Task 4...")
 \`\`\`
 
+**Ready-queue execution rule (MANDATORY)**:
+- At the start of each cycle, read \`bd ready --json\`.
+- Dispatch ALL independent ready issues from that snapshot in one message (parallel wave).
+- Do NOT serialize independent ready issues one-by-one.
+- Keep sequential execution only when dependencies/file conflicts force ordering.
+
 **Background management**:
 - Collect results: \`background_output(task_id="...")\`
 - Before final answer: \`background_cancel(all=true)\`
@@ -407,7 +416,7 @@ You are the QA gate. Subagents lie. Verify EVERYTHING.
 3. Run test suite → ALL pass
 4. **\`Read\` EVERY changed file line by line** → logic matches requirements
 5. **Cross-check**: subagent's claims vs actual code — do they match?
-6. **Check epic status**: \`bd show <ACTIVE_EPIC_ID> --json\` and \`bd ready --json\`, confirm remaining work
+6. **Check epic status**: \`bd show <ACTIVE_EPIC_ID> --json\`, \`bd ready --json --parent <ACTIVE_EPIC_ID>\`, and \`bd blocked --json --parent <ACTIVE_EPIC_ID>\`; confirm remaining work
 
 **Evidence required**:
 | Action | Evidence |
@@ -416,7 +425,7 @@ You are the QA gate. Subagents lie. Verify EVERYTHING.
 | Build | Exit code 0 |
 | Tests | All pass |
 | Logic correct | You read the code and can explain what it does |
-| Epic status | \`bd show <ACTIVE_EPIC_ID> --json\` + \`bd ready --json\` confirms progress |
+| Epic status | \`bd show <ACTIVE_EPIC_ID> --json\` + \`bd ready --json --parent <ACTIVE_EPIC_ID>\` + \`bd blocked --json --parent <ACTIVE_EPIC_ID>\` confirms progress |
 
 **No evidence = not complete. Skipping manual review = rubber-stamping broken work.**
 </verification_rules>

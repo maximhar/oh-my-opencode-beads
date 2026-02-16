@@ -17,9 +17,13 @@ export const START_WORK_TEMPLATE = `You are starting a beads-driven work session
    - The hook already ran \`bd update <epic-id> --status=in_progress\`
    - The hook already injected \`bd show <epic-id> --json\`
    - The hook already injected \`bd ready --json\`
+   - The hook already injected \`bd list --status=in_progress --json\`
 
 5. **Start execution inside the active epic**:
-   - Use all ready issues ordered by priority that belong to the active epic
+   - Use all ready issues that belong to the active epic
+   - Parallelize all currently ready independent issues in one delegation wave
+   - Run sequentially only when dependencies or file conflicts require ordering
+   - For in-progress issues in the active epic with no workers assigned, delegate them immediately
    - Delegate each selected issue and require the executing subagent to claim it with \`bd update <issue-id> --status=in_progress\`
    - Execute and close issues until the epic is closed
 

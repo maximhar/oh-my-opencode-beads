@@ -134,6 +134,9 @@ describe("start-work hook", () => {
         expect(output.parts[0].text).toContain("Starting Work Session")
         expect(output.parts[0].text).toContain("beads-101")
         expect(output.parts[0].text).not.toContain("Cannot Start Work")
+        expect(output.parts[0].text).toContain(
+          "Parallelize all currently ready independent issues in one wave"
+        )
 
         const state = readActiveWorkState(testDir)
         expect(state?.active_epic_id).toBe("beads-101")

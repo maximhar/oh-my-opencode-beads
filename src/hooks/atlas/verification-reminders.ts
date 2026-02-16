@@ -1,5 +1,14 @@
 import { VERIFICATION_REMINDER } from "./system-reminder-templates"
 
+type EpicScopeIssue = Record<string, unknown>
+
+export interface EpicScopeSnapshotData {
+  epicId: string
+  readyIssues: EpicScopeIssue[]
+  blockedIssues: EpicScopeIssue[]
+  warning?: string
+}
+
 function buildVerificationReminder(sessionId: string): string {
   return `${VERIFICATION_REMINDER}
 
@@ -15,7 +24,8 @@ task(session_id="${sessionId}", prompt="fix: [describe the specific failure]")
 export function buildOrchestratorReminder(
   workItemLabel: string,
   sessionId: string,
-  progress?: { total: number; completed: number }
+  progress?: { total: number; completed: number },
+  epicScopeSnapshot?: EpicScopeSnapshotData
 ): string {
   const hasProgress = progress !== undefined && progress.total > 0
   const remaining = hasProgress ? progress.total - progress.completed : undefined
@@ -27,6 +37,41 @@ export function buildOrchestratorReminder(
     remaining !== undefined
       ? `**${remaining} tasks remain. Keep working.**`
       : "**Continue with the next ready issue in the active epic. Keep working.**"
+
+  const epicScopeSection = epicScopeSnapshot
+    ? `
+**STEP 6: USE PRELOADED EPIC-SCOPED QUEUE SNAPSHOT (PRIMARY SOURCE)**
+
+Use this preloaded queue state first (do NOT immediately re-run beads commands):
+
+\`bd ready --json --parent ${epicScopeSnapshot.epicId}\`
+\`\`\`json
+${JSON.stringify(epicScopeSnapshot.readyIssues, null, 2)}
+\`\`\`
+
+\`bd blocked --json --parent ${epicScopeSnapshot.epicId}\`
+\`\`\`json
+${JSON.stringify(epicScopeSnapshot.blockedIssues, null, 2)}
+\`\`\`
+${epicScopeSnapshot.warning ? `\n⚠️ ${epicScopeSnapshot.warning}\n` : ""}
+
+This snapshot is your immediate source of truth for selecting the next delegation wave.
+
+If you suspect staleness after new closures/dependency changes, refresh with:
+\`\`\`
+bd ready --json --parent ${epicScopeSnapshot.epicId}
+bd blocked --json --parent ${epicScopeSnapshot.epicId}
+\`\`\``
+    : `
+**STEP 6: CHECK WORK PROGRESS DIRECTLY (EVERY TIME — NO EXCEPTIONS)**
+
+Do NOT rely on cached progress. Run these NOW:
+\`\`\`
+bd list --status=in_progress
+bd ready
+bd blocked
+\`\`\`
+This is YOUR ground truth. Use it to decide what comes next.`
 
   return `
 ---
@@ -53,15 +98,7 @@ Then \`Read\` each file found — especially:
 - Adjust your plan if blockers were discovered
 - Propagate learnings to subsequent subagents
 
-**STEP 6: CHECK WORK PROGRESS DIRECTLY (EVERY TIME — NO EXCEPTIONS)**
-
-Do NOT rely on cached progress. Run these NOW:
-\`\`\`
-bd list --status=in_progress
-bd ready
-bd blocked
-\`\`\`
-This is YOUR ground truth. Use it to decide what comes next.
+${epicScopeSection}
 
 **STEP 7: MARK COMPLETION (IMMEDIATELY)**
 
@@ -80,7 +117,9 @@ Update issue tracking immediately:
 
 **STEP 9: PROCEED TO NEXT TASK**
 
-- Run \`bd ready\` AGAIN to identify the next available issue in the active epic
+- If snapshot is stale, refresh queue with epic scope:
+  - \`bd ready --json --parent <ACTIVE_EPIC_ID>\`
+  - \`bd blocked --json --parent <ACTIVE_EPIC_ID>\`
 - Start immediately - DO NOT STOP
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

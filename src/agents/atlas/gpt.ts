@@ -166,18 +166,20 @@ Use:
 \`\`\`bash
 bd show <ACTIVE_EPIC_ID>
 bd show <ACTIVE_EPIC_ID> --json
-bd blocked
-bd ready --json
+bd blocked --json --parent <ACTIVE_EPIC_ID>
+bd ready --json --parent <ACTIVE_EPIC_ID>
 \`\`\`
 
-**Ground truth rule**: \`bd ready --json\` is the execution source of truth. Prefer it over ad-hoc queue scanning.
+**Ground truth rule**: \`bd ready --json --parent <ACTIVE_EPIC_ID>\` is the execution source of truth. Prefer it over ad-hoc queue scanning.
 
 ## Step 1.5: Think -> Create -> Act (Beads Loop)
 
 For each active-epic cycle:
-1. **Think**: Select the highest-priority unblocked issue from \`bd ready --json\`.
-2. **Create**: If you discover follow-up work (>2 minutes), file it immediately.
-3. **Act**: Execute and close the current issue before moving to the next.
+1. **Think**: Select ready issues from \`bd ready --json --parent <ACTIVE_EPIC_ID>\`.
+2. **Parallelize**: Treat that ready snapshot as the candidate set and dispatch all currently ready independent issues in one parallel wave.
+3. **Sequence only when required**: Process sequentially only for dependency edges or file conflicts.
+4. **Create**: If you discover follow-up work (>2 minutes), file it immediately.
+5. **Act**: Execute and close delegated issues, then repeat with the next ready wave.
 
 Dependency types are mandatory and explicit:
 - \`blocks\`: hard prerequisite (affects ready state)
@@ -294,7 +296,8 @@ Repeat Step 3 until the active epic is complete.
 ### 3.7 Session Bookends (MANDATORY)
 
 Start each execution cycle:
-- Run \`bd ready --json\`
+- Run \`bd ready --json --parent <ACTIVE_EPIC_ID>\`
+- Run \`bd blocked --json --parent <ACTIVE_EPIC_ID>\`
 - Run \`bd show <ACTIVE_EPIC_ID> --json\`
 - Ensure delegation prompt instructs subagent to claim \`ASSIGNED_ISSUE_ID\` via \`bd update <ASSIGNED_ISSUE_ID> --status in_progress\`
 
@@ -370,7 +373,7 @@ You are the QA gate. Subagents lie. Verify EVERYTHING.
 | 3 | \`Bash("bun test")\` | all pass |
 | 4 | \`Read\` EVERY changed file | logic matches requirements |
 | 5 | Cross-check claims vs code | subagent's report matches reality |
-| 6 | \`bd show <ACTIVE_EPIC_ID> --json\` + \`bd ready --json\` | epic status confirmed |
+| 6 | \`bd show <ACTIVE_EPIC_ID> --json\` + \`bd ready --json --parent <ACTIVE_EPIC_ID>\` + \`bd blocked --json --parent <ACTIVE_EPIC_ID>\` | epic status confirmed |
 
 **Manual code review (Step 4) is NON-NEGOTIABLE:**
 - Read every line of every changed file

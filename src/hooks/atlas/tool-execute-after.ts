@@ -13,6 +13,7 @@ import { HOOK_NAME } from "./hook-name"
 import { DIRECT_WORK_REMINDER } from "./system-reminder-templates"
 import { isSisyphusPath } from "./sisyphus-path"
 import { extractSessionIdFromOutput } from "./subagent-session-id"
+import { buildEpicScopeSnapshot } from "./epic-scope-snapshot"
 import { buildOrchestratorReminder, buildStandaloneVerificationReminder } from "./verification-reminders"
 import { isWriteOrEditToolName } from "./write-edit-tool-policy"
 import type { ToolExecuteAfterInput, ToolExecuteAfterOutput } from "./types"
@@ -77,7 +78,11 @@ export function createToolExecuteAfterHandler(input: {
           })
         }
 
-        const workItemLabel = activeWorkState.active_epic_title ?? activeWorkState.active_epic_id ?? "active-work"
+        const activeEpicId = activeWorkState.active_epic_id
+        const workItemLabel = activeWorkState.active_epic_title ?? activeEpicId ?? "active-work"
+        const epicScopeSnapshot = activeEpicId
+          ? buildEpicScopeSnapshot(ctx.directory, activeEpicId)
+          : undefined
         const originalResponse = toolOutput.output
 
         toolOutput.output = `
@@ -92,7 +97,7 @@ ${fileChanges}
 ${originalResponse}
 
 <system-reminder>
-${buildOrchestratorReminder(workItemLabel, subagentSessionId)}
+${buildOrchestratorReminder(workItemLabel, subagentSessionId, undefined, epicScopeSnapshot)}
 </system-reminder>`
 
         log(`[${HOOK_NAME}] Output transformed for orchestrator mode (active work)`, {
